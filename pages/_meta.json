@@ -6,12 +6,6 @@
   "data-flows": "Data Flows",
   "recommended-tech-stack": "Recommended Tech Stack",
   "remaining-questions": "Remaining Questions",
-  "another": "Another Page",
-  "advanced": "Advanced (A Folder)",
-  "about": {
-    "title": "About",
-    "type": "page"
-  },
   "contact": {
     "title": "Contact ↗",
     "type": "page",
