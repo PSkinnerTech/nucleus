@@ -1,0 +1,210 @@
+---
+title: "Python Conventions Rule"
+navOrder: 3
+---
+
+# Python Conventions Rule
+
+This example demonstrates how to create a Cursor rule that enforces Python coding conventions and PEP 8 standards.
+
+## Rule Configuration
+
+Create a file at `.cursor/rules/python-conventions.cursorignore` with the following content:
+
+```
+# Python Coding Conventions Rule
+# This rule applies to Python files and enforces PEP 8 standards
+
+# Define which files this rule applies to
+*.py
+src/**/*.py
+tests/**/*.py
+
+# Rule content below
+When helping with Python code, enforce these coding conventions:
+
+1. Follow PEP 8 style guide:
+   - Use 4 spaces per indentation level, not tabs
+   - Maximum line length of 79 characters for code and 72 for docstrings/comments
+   - Use snake_case for variables, functions, and methods
+   - Use PascalCase for class names
+   - Use UPPER_CASE for constants
+   - Use trailing commas in multi-line data structures
+   - Surround top-level function and class definitions with two blank lines
+
+2. Documentation:
+   - Use docstrings for all public modules, functions, classes, and methods
+   - Use Google-style docstrings with type annotations
+   - Include examples in docstrings where helpful
+
+3. Imports:
+   - Group imports in the following order with a blank line between groups:
+     1. Standard library imports
+     2. Related third-party imports
+     3. Local application/library specific imports
+   - Prefer absolute imports over relative imports
+   - Avoid using wildcard imports (from module import *)
+
+4. Error handling:
+   - Use specific exception types rather than bare except clauses
+   - Handle exceptions where they make sense, not blanket try/except blocks
+   - Use context managers (with statements) for resource management
+
+5. Testing:
+   - Write tests for all new functionality
+   - Follow a test naming convention like test_<function_name>_<scenario>
+```
+
+## Using the Rule
+
+When this rule is added to your project:
+
+1. Cursor will automatically apply these guidelines when you are working with Python files
+2. The rule will only affect files matching the patterns (*.py and files in src/ and tests/ directories)
+3. The AI assistant will follow PEP 8 standards when generating or modifying Python code
+
+## Sample Python Module Following This Rule
+
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+User data management module.
+
+This module provides functionality for managing user data, including
+creation, validation, and persistence.
+"""
+
+import os
+import json
+import logging
+from datetime import datetime
+from typing import Dict, List, Optional, Union
+
+import requests
+from pydantic import BaseModel, EmailStr, validator
+
+from myapp.utils.validators import validate_username
+from myapp.exceptions import UserValidationError
+
+
+# Constants
+MAX_USERNAME_LENGTH = 20
+USER_DATA_PATH = os.environ.get("USER_DATA_PATH", "data/users.json")
+
+
+class User(BaseModel):
+    """User model with validation.
+
+    Attributes:
+        user_id: Unique identifier for the user
+        username: User's chosen display name
+        email: User's email address
+        created_at: Timestamp when the user was created
+        last_login: Timestamp of last login (optional)
+    """
+
+    user_id: str
+    username: str
+    email: EmailStr
+    created_at: datetime
+    last_login: Optional[datetime] = None
+
+    @validator("username")
+    def username_valid(cls, v):
+        """Validate that the username meets requirements.
+
+        Args:
+            v: The username to validate
+
+        Returns:
+            The valid username
+
+        Raises:
+            ValueError: If username doesn't meet requirements
+        """
+        if not validate_username(v) or len(v) > MAX_USERNAME_LENGTH:
+            raise ValueError(f"Invalid username format or exceeds {MAX_USERNAME_LENGTH} characters")
+        return v
+
+
+def get_user(user_id: str) -> Optional[Dict]:
+    """Retrieve user data by ID.
+
+    Args:
+        user_id: The unique identifier of the user to retrieve
+
+    Returns:
+        The user data dictionary or None if not found
+
+    Raises:
+        FileNotFoundError: If the user data file doesn't exist
+    """
+    try:
+        with open(USER_DATA_PATH, "r") as file:
+            users = json.load(file)
+            return users.get(user_id)
+    except FileNotFoundError:
+        logging.error(f"User data file not found at {USER_DATA_PATH}")
+        raise
+
+
+def create_user(username: str, email: str) -> User:
+    """Create a new user.
+
+    Args:
+        username: The desired username
+        email: The user's email address
+
+    Returns:
+        A new User instance
+
+    Raises:
+        UserValidationError: If validation fails
+    """
+    try:
+        user_id = f"user_{int(datetime.now().timestamp())}"
+        user = User(
+            user_id=user_id,
+            username=username,
+            email=email,
+            created_at=datetime.now(),
+        )
+        
+        # Save user to persistent storage
+        _save_user(user)
+        
+        return user
+    except ValueError as e:
+        raise UserValidationError(str(e)) from e
+
+
+def _save_user(user: User) -> None:
+    """Save user to persistent storage.
+
+    This is a private function used internally.
+
+    Args:
+        user: The user instance to save
+    """
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(USER_DATA_PATH), exist_ok=True)
+        
+        # Read existing users or initialize empty dict
+        try:
+            with open(USER_DATA_PATH, "r") as file:
+                users = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            users = {}
+        
+        # Add or update user
+        users[user.user_id] = user.dict()
+        
+        # Write back to file
+        with open(USER_DATA_PATH, "w") as file:
+            json.dump(users, file, default=str, indent=2)
+            
+    except Exception as e:
+        logging.error(f"Failed to save user: {str(e)}")
+        raise 

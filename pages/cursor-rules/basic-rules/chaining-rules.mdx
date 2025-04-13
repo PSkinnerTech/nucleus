@@ -1,0 +1,181 @@
+---
+title: "Chaining Cursor Rules"
+navOrder: 4
+---
+
+# Chaining Cursor Rules
+
+This example shows how to chain multiple Cursor rules together using the `@file` reference system, allowing you to create modular and reusable rule sets.
+
+## Basic Concept
+
+When you include `@file` references in your rules, Cursor will include the content of those referenced files as context when the rule is applied. This allows you to:
+
+1. Create modular rule components
+2. Reuse common rules across multiple projects
+3. Build specialized rule sets for different parts of your codebase
+
+## Rule Structure Example
+
+Here's an example project structure with chained rules:
+
+```
+.cursor/
+  rules/
+    base-conventions.cursorignore       # Base coding standards
+    typescript-conventions.cursorignore # TypeScript-specific rules (references base)
+    react-conventions.cursorignore      # React-specific rules (references TypeScript)
+    next-conventions.cursorignore       # Next.js-specific rules (references React)
+```
+
+## Example Implementation
+
+### 1. Base Conventions Rule
+
+Create a file at `.cursor/rules/base-conventions.cursorignore`:
+
+```
+# Base Coding Conventions
+# Contains common conventions for all code
+
+# Define which files this rule applies to
+*.*
+
+# Rule content below
+When helping with code, follow these base conventions:
+
+1. Maintain consistent indentation and formatting
+2. Add descriptive comments for complex logic
+3. Follow the DRY (Don't Repeat Yourself) principle
+4. Use meaningful variable and function names
+5. Limit function/method length to maintain readability
+6. Keep functions focused on a single responsibility
+7. Properly handle errors and edge cases
+8. Write code that is easy to test
+9. Follow project-specific naming conventions
+10. Ensure code is secure by default
+```
+
+### 2. TypeScript Conventions Rule (Builds on Base)
+
+Create a file at `.cursor/rules/typescript-conventions.cursorignore`:
+
+```
+# TypeScript Coding Conventions
+# Contains TypeScript-specific coding standards
+
+# Define which files this rule applies to
+*.ts
+*.tsx
+
+# Include base conventions
+@file:.cursor/rules/base-conventions.cursorignore
+
+# Rule content below
+When helping with TypeScript code, follow these additional conventions:
+
+1. Use explicit typing and avoid 'any' type when possible
+2. Prefer interfaces for object shapes that will be used across the codebase
+3. Use type aliases for complex types or unions that are reused
+4. Make use of TypeScript's utility types where appropriate
+5. Embrace discriminated unions for type-safe state management
+6. Use readonly modifiers for immutable properties
+7. Leverage const assertions for literal types
+8. Follow consistent import ordering:
+   - External libraries first
+   - Absolute imports next
+   - Relative imports last
+9. Use enums for related constants
+10. Enable strict mode in tsconfig.json
+```
+
+### 3. React Conventions Rule (Builds on TypeScript)
+
+Create a file at `.cursor/rules/react-conventions.cursorignore`:
+
+```
+# React Coding Conventions
+# Contains React-specific coding standards
+
+# Define which files this rule applies to
+*.jsx
+*.tsx
+src/components/**/*
+
+# Include TypeScript conventions (which includes base)
+@file:.cursor/rules/typescript-conventions.cursorignore
+
+# Rule content below
+When helping with React code, follow these additional conventions:
+
+1. Use functional components with hooks instead of class components
+2. Prefer named exports for components
+3. Keep components focused on UI rendering, extract complex logic to hooks
+4. Follow consistent prop naming:
+   - Use 'on' prefix for event handlers (onClick, onSubmit)
+   - Use 'handle' prefix for handler functions (handleClick, handleSubmit)
+5. Use React.memo for expensive components
+6. Implement proper prop validation
+7. Use React Fragment instead of unnecessary div containers
+8. Keep consistent file structure:
+   - Components/
+     - ComponentName/
+       - index.tsx
+       - ComponentName.module.css
+       - ComponentName.test.tsx
+9. Follow React rendering best practices
+```
+
+### 4. Next.js Conventions Rule (Builds on React)
+
+Create a file at `.cursor/rules/next-conventions.cursorignore`:
+
+```
+# Next.js Coding Conventions
+# Contains Next.js-specific coding standards
+
+# Define which files this rule applies to
+*.jsx
+*.tsx
+pages/**/*
+app/**/*
+components/**/*
+
+# Include React conventions (which includes TypeScript and base)
+@file:.cursor/rules/react-conventions.cursorignore
+
+# Rule content below
+When helping with Next.js code, follow these additional conventions:
+
+1. Use the App Router patterns where possible
+2. Prefer server components for non-interactive UI
+3. Follow Next.js file naming conventions:
+   - page.tsx for route pages
+   - layout.tsx for layouts
+   - loading.tsx for loading states
+   - error.tsx for error handling
+4. Use next/image for optimized images
+5. Implement proper metadata in layouts
+6. Use server actions for form submissions
+7. Leverage Next.js data fetching patterns (SSR, ISR, etc.)
+8. Follow the folder structure:
+   - app/
+     - (routes)/
+       - page.tsx
+       - layout.tsx
+   - components/
+   - lib/
+   - public/
+9. Use route groups for organizational purposes
+10. Follow Next.js performance best practices
+```
+
+## Benefits of Chaining Rules
+
+1. **Modularity**: Break down rules into logical, reusable components
+2. **Consistency**: Share common rules across projects
+3. **Organization**: Structure rules according to technology layers
+4. **Maintenance**: Update shared rules in one place
+5. **Flexibility**: Apply different rule combinations to different file types
+
+By using this approach, you can create a comprehensive yet manageable set of rules that evolve with your project. 

@@ -1,0 +1,100 @@
+---
+title: "React Best Practices Rule"
+navOrder: 2
+---
+
+# React Best Practices Rule
+
+This example shows how to create a Cursor rule that enforces React best practices when working with React components.
+
+## Rule Configuration
+
+Create a file at `.cursor/rules/react-best-practices.cursorignore` with the following content:
+
+```
+# React Component Best Practices Rule
+# This rule applies to React component files
+
+# Define which files this rule applies to
+*.jsx
+*.tsx
+src/components/**/*
+
+# Rule content below
+When helping with React components, follow these best practices:
+
+1. Use functional components with hooks instead of class components
+2. Follow the single responsibility principle - each component should do one thing well
+3. Keep components small and focused
+4. Use destructuring for props
+5. Implement proper prop validation with PropTypes or TypeScript
+6. Follow consistent naming conventions:
+   - Component files should be PascalCase
+   - Component names should be PascalCase
+   - Hooks should start with "use" prefix
+7. Extract complex logic into custom hooks
+8. Use React.memo for performance optimization where appropriate
+9. Don't define components inside other components
+10. Keep styling consistent with the project patterns (styled-components, CSS modules, etc.)
+
+If creating a new component:
+- Check other components in the codebase for consistent patterns
+- Match the existing folder structure and naming conventions
+- Include proper documentation comments
+```
+
+## Using the Rule
+
+When this rule is added to your project:
+
+1. Cursor will automatically apply these guidelines when you are working with React component files
+2. The rule will only affect files matching the patterns (*.jsx, *.tsx, components directory)
+3. The AI assistant will follow these best practices when generating or modifying React code
+
+## Sample Component Following This Rule
+
+```jsx
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useDataFetching } from '../hooks/useDataFetching';
+import './UserProfile.css';
+
+// Follows single responsibility principle - just displays user profile
+const UserProfile = ({ userId, showDetails = false }) => {
+  const { data: user, loading, error } = useDataFetching(`/api/users/${userId}`);
+  const [isExpanded, setIsExpanded] = useState(showDetails);
+
+  const toggleDetails = () => {
+    setIsExpanded(prev => !prev);
+  };
+
+  if (loading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error">Error loading profile</div>;
+  
+  return (
+    <div className="user-profile">
+      <h2>{user.name}</h2>
+      <img src={user.avatar} alt={`${user.name}'s avatar`} />
+      
+      <button onClick={toggleDetails}>
+        {isExpanded ? 'Hide Details' : 'Show Details'}
+      </button>
+      
+      {isExpanded && (
+        <div className="user-details">
+          <p>Email: {user.email}</p>
+          <p>Role: {user.role}</p>
+          <p>Joined: {new Date(user.joinDate).toLocaleDateString()}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+UserProfile.propTypes = {
+  userId: PropTypes.string.isRequired,
+  showDetails: PropTypes.bool
+};
+
+export default UserProfile;
+``` 

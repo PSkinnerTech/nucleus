@@ -1,0 +1,1100 @@
+---
+title: "V0 Step 1: Developer & Testing Rules"
+navOrder: 1
+---
+
+# Prioris V0 Step 1: Developer & Testing Rules
+
+This page contains all the Cursor rules you need to implement the Developer & Testing Tools for Prioris V0 as outlined in the [Step 1: Developer and Testing](/v0/developer-and-testing) guide.
+
+## Setting Up Cursor Rules
+
+To use these rules in your project, follow these steps:
+
+1. Create a rules directory in your project:
+```bash
+mkdir -p .cursor/rules
+```
+
+2. For each rule below, create a corresponding <code>.cursorignore</code> file in the <code>.cursor/rules</code> directory with the rule content.
+
+For example, to set up the Project Setup rule:
+```bash
+# Copy the Project Setup rule content
+# Create the rule file
+touch .cursor/rules/prioris-v0-step1-setup.cursorignore
+# Paste the rule content into the file
+```
+
+3. You can now use these rules in Cursor to guide your development process. Cursor will automatically apply these rules when you work on relevant files.
+
+## Project Setup Rule
+
+This rule helps you with the initial project setup for the Prioris V0 CLI tool.
+
+<details>
+<summary>**Click to see the complete Project Setup rule**</summary>
+
+```
+# Prioris V0 Project Setup Rule
+# This rule helps with setting up the initial project structure and dependencies
+
+# Define which files this rule applies to
+*.js
+*.json
+*.env
+package.json
+package-lock.json
+.env
+
+# Rule content below
+When helping with the Prioris V0 Step 1 project setup:
+
+1. Project Structure Guidelines:
+   - Follow the specified directory structure:
+     - prioris-cli/
+       - src/
+         - index.js (CLI entry point)
+         - storage.js (Database operations)
+       - .env (Environment variables)
+       - package.json (Project configuration)
+   - Keep the structure simple and flat for this prototype
+
+2. Package Setup:
+   - Use npm for package management
+   - Required dependencies:
+     - commander: For CLI interface
+     - dotenv: For environment variable management
+     - axios: For HTTP requests
+     - openai: For OpenAI API integration
+     - sqlite3: For local storage
+     - @google-cloud/text-to-speech: For TTS functionality
+
+3. Environment Configuration:
+   - Store API keys and credentials in .env file
+   - Required environment variables:
+     - OPENAI_API_KEY: For OpenAI interaction
+     - GOOGLE_CLOUD_CREDENTIALS: Path to Google Cloud credentials file
+   - Never hardcode sensitive information in code files
+   - Add .env to .gitignore to prevent committing secrets
+
+4. Initialization Process:
+   - Use proper error handling when initializing services
+   - Validate environment variables are present before using them
+   - Provide clear console messages during initialization
+   - Use async initialization where appropriate
+
+5. Basic Setup Commands:
+   - Recommend proper npm commands for installation and setup
+   - Ensure proper file permissions are set
+   - Include shebang line in the main CLI file
+   - Use npm link for development testing
+
+6. Project Metadata:
+   - Set appropriate name, version, and description in package.json
+   - Configure bin field for CLI executable
+   - Set appropriate license and author information
+   - Add start script to package.json
+
+7. Code Style:
+   - Use consistent naming conventions (camelCase)
+   - Add proper JSDoc comments for functions
+   - Use const for values that don't change
+   - Separate configuration and implementation
+```
+
+</details>
+
+### Implementation Examples
+
+<details>
+<summary>**Directory Structure & Setup Commands**</summary>
+
+```bash
+mkdir -p prioris-cli/src
+cd prioris-cli
+npm init -y
+npm install commander dotenv axios openai sqlite3 @google-cloud/text-to-speech
+touch .env src/index.js src/storage.js
+```
+
+</details>
+
+<details>
+<summary>**.env File Setup**</summary>
+
+```
+# .env
+OPENAI_API_KEY=your_openai_key
+GOOGLE_CLOUD_CREDENTIALS=/path/to/your/google-credentials.json
+```
+
+</details>
+
+<details>
+<summary>**package.json Configuration**</summary>
+
+```json
+{
+  "name": "prioris-cli",
+  "version": "0.0.1",
+  "description": "Prioris CLI - Personal Assistant Prototype",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "bin": {
+    "prioris": "./src/index.js"
+  },
+  "keywords": ["cli", "assistant", "ai"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^x.x.x",
+    "dotenv": "^x.x.x",
+    "axios": "^x.x.x",
+    "openai": "^x.x.x", 
+    "sqlite3": "^x.x.x",
+    "@google-cloud/text-to-speech": "^x.x.x"
+  }
+}
+```
+
+</details>
+
+## CLI Development Rule
+
+This rule helps you build the CLI interface for the Prioris V0 prototype using Commander.js.
+
+<details>
+<summary>**Click to see the complete CLI Development rule**</summary>
+
+```
+# Prioris V0 CLI Development Rule
+# This rule helps with implementing the CLI interface using Commander.js
+
+# Define which files this rule applies to
+*.js
+src/index.js
+src/cli.js
+src/commands/*.js
+
+# Include setup rule for context
+@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+
+# Rule content below
+When helping with the Prioris V0 CLI implementation:
+
+1. CLI Structure Guidelines:
+   - Use Commander.js for command line parsing and execution
+   - Implement the following commands:
+     - ask: For asking Prioris a question
+     - remember: For viewing past interactions
+     - speak: For text-to-speech conversion
+   - Keep the CLI entry point clean and modular
+   - Add proper descriptions for each command
+   - Include version information using package.json
+
+2. Command Implementation:
+   - Each command should have:
+     - A clear description
+     - Proper argument and option handling
+     - Async execution where appropriate
+     - Good error handling
+     - Clear user feedback
+   - For the 'ask' command:
+     - Send query to OpenAI API
+     - Display the response
+     - Store interaction in local storage
+   - For the 'remember' command:
+     - Retrieve past interactions from storage
+     - Display them in a readable format
+     - Support pagination if many records exist
+   - For the 'speak' command:
+     - Convert text to speech using Google Cloud TTS
+     - Save audio to file
+     - Provide output confirmation
+
+3. Error Handling:
+   - Handle API errors gracefully
+   - Provide useful error messages
+   - Check for missing credentials
+   - Validate command inputs
+   - Include proper try/catch blocks
+
+4. User Experience:
+   - Add color coding for readability (consider chalk or colors)
+   - Include loading indicators for async operations
+   - Format output for better readability
+   - Set reasonable default values
+   - Add help text and examples
+
+5. Code Organization:
+   - Separate concerns (API calls, command logic, output formatting)
+   - Use proper function naming (action verbs for functions)
+   - Keep functions focused and small
+   - Use ES modules or CommonJS consistently
+   - Initialize required services before command execution
+
+6. CLI Entry Point:
+   - Include shebang line for executable
+   - Require dotenv configuration early
+   - Parse arguments correctly
+   - Provide global help and version information
+   - Handle keyboard interrupts gracefully
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**CLI Entry Point (src/index.js)**</summary>
+
+```javascript
+#!/usr/bin/env node
+// src/index.js
+require('dotenv').config();
+const { program } = require('commander');
+const storage = require('./storage');
+const { Configuration, OpenAIApi } = require('openai');
+const textToSpeech = require('@google-cloud/text-to-speech');
+
+// Initialize OpenAI
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+
+// Initialize Google Cloud TTS
+const ttsClient = new textToSpeech.TextToSpeechClient();
+
+// Initialize storage
+storage.init();
+
+program
+  .name('prioris')
+  .description('Prioris CLI - Personal Assistant Prototype')
+  .version('0.0.1');
+
+program
+  .command('ask <query>')
+  .description('Ask Prioris a question')
+  .action(async (query) => {
+    try {
+      console.log('Thinking...');
+      const response = await openai.createChatCompletion({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'You are Prioris, a helpful personal assistant.' },
+          { role: 'user', content: query }
+        ],
+      });
+      
+      const answer = response.data.choices[0].message.content;
+      console.log(`Prioris: ${answer}`);
+      
+      // Store interaction in memory
+      await storage.saveInteraction(query, answer);
+    } catch (error) {
+      console.error('Error:', error.message);
+    }
+  });
+
+program
+  .command('remember')
+  .description('Show past interactions')
+  .option('-l, --limit <number>', 'Number of interactions to show', '10')
+  .action(async (options) => {
+    try {
+      const limit = parseInt(options.limit);
+      const interactions = await storage.getInteractions(limit);
+      
+      if (interactions.length === 0) {
+        console.log('No past interactions found.');
+        return;
+      }
+      
+      console.log('Past interactions:');
+      interactions.forEach((item, i) => {
+        console.log(`\n--- Interaction ${i+1} ---`);
+        console.log(`You: ${item.query}`);
+        console.log(`Prioris: ${item.response}`);
+        console.log(`Time: ${new Date(item.timestamp).toLocaleString()}`);
+      });
+    } catch (error) {
+      console.error('Error retrieving interactions:', error.message);
+    }
+  });
+
+program
+  .command('speak <text>')
+  .description('Convert text to speech using Google Cloud TTS')
+  .option('-o, --output <filename>', 'Output filename', 'output.mp3')
+  .option('-l, --language <code>', 'Language code', 'en-US')
+  .option('-g, --gender <gender>', 'Voice gender (MALE, FEMALE, NEUTRAL)', 'NEUTRAL')
+  .action(async (text, options) => {
+    try {
+      console.log('Converting text to speech...');
+      const request = {
+        input: { text: text },
+        voice: { 
+          languageCode: options.language, 
+          ssmlGender: options.gender 
+        },
+        audioConfig: { audioEncoding: 'MP3' },
+      };
+
+      const [response] = await ttsClient.synthesizeSpeech(request);
+      const outputFile = options.output;
+      require('fs').writeFileSync(outputFile, response.audioContent, 'binary');
+      console.log(`Audio content written to: ${outputFile}`);
+    } catch (error) {
+      console.error('Error with text-to-speech:', error.message);
+    }
+  });
+
+program.parse();
+```
+
+</details>
+
+## Storage Implementation Rule
+
+This rule helps you implement the SQLite-based storage system for the Prioris V0 prototype.
+
+<details>
+<summary>**Click to see the complete Storage Implementation rule**</summary>
+
+```
+# Prioris V0 Storage Implementation Rule
+# This rule helps with implementing the SQLite-based storage system
+
+# Define which files this rule applies to
+*.js
+src/storage.js
+src/db/*.js
+src/models/*.js
+
+# Include setup rule for context
+@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+
+# Rule content below
+When helping with the Prioris V0 storage implementation:
+
+1. SQLite Setup:
+   - Use sqlite3 package for database operations
+   - Create a database in a user-specific location (~/.prioris/ folder)
+   - Initialize database and tables on startup
+   - Use proper serialization for operations
+   - Implement connection pooling or singleton pattern
+
+2. Database Schema:
+   - Create an interactions table with:
+     - id: Primary key, auto-increment
+     - query: User's question text
+     - response: Assistant's response text
+     - timestamp: When the interaction occurred
+   - Use appropriate data types for columns
+   - Add indexes for frequently queried fields
+   - Use DATETIME DEFAULT CURRENT_TIMESTAMP for timestamps
+
+3. Storage API Design:
+   - Implement the following functions:
+     - init(): Initialize the database connection
+     - saveInteraction(query, response): Store a new interaction
+     - getInteractions(limit): Retrieve recent interactions
+   - Return Promises for async operations
+   - Use parameterized queries for security
+   - Implement proper error handling
+
+4. Error Handling:
+   - Handle database connection errors
+   - Properly close connections when errors occur
+   - Add rollback logic for transactions
+   - Log detailed errors for debugging
+   - Provide user-friendly error messages
+
+5. Data Management:
+   - Implement data cleanup for old records
+   - Use transaction for multi-statement operations
+   - Add proper validation before storing data
+   - Escape special characters in queries
+   - Consider data migration strategy for future schema changes
+
+6. Performance Considerations:
+   - Use proper indexing for query performance
+   - Keep connections open when appropriate
+   - Close connections when done
+   - Use prepared statements for repeated queries
+   - Batch operations when possible
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**Storage Module (src/storage.js)**</summary>
+
+```javascript
+// src/storage.js
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const fs = require('fs');
+
+// Ensure data directory exists
+const dataDir = path.join(process.env.HOME || process.env.USERPROFILE, '.prioris');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir);
+}
+
+const dbPath = path.join(dataDir, 'prioris.db');
+let db;
+
+/**
+ * Initialize the database connection and create tables if they don't exist
+ */
+function init() {
+  return new Promise((resolve, reject) => {
+    try {
+      db = new sqlite3.Database(dbPath, (err) => {
+        if (err) {
+          console.error('Error connecting to database:', err.message);
+          return reject(err);
+        }
+        
+        console.log(`Database connected at ${dbPath}`);
+        
+        // Create tables if they don't exist
+        db.serialize(() => {
+          db.run(`
+            CREATE TABLE IF NOT EXISTS interactions (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              query TEXT NOT NULL,
+              response TEXT NOT NULL,
+              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+          `, (err) => {
+            if (err) {
+              console.error('Error creating interactions table:', err.message);
+              return reject(err);
+            }
+            
+            // Create index on timestamp for faster queries
+            db.run(`
+              CREATE INDEX IF NOT EXISTS idx_interactions_timestamp 
+              ON interactions(timestamp DESC)
+            `, (err) => {
+              if (err) {
+                console.error('Error creating index:', err.message);
+                return reject(err);
+              }
+              
+              console.log('Database initialized successfully');
+              resolve();
+            });
+          });
+        });
+      });
+    } catch (error) {
+      console.error('Unexpected error during initialization:', error.message);
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Save a new interaction to the database
+ * @param {string} query - The user's question
+ * @param {string} response - The assistant's response
+ * @returns {Promise<number>} - The ID of the saved interaction
+ */
+function saveInteraction(query, response) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      return reject(new Error('Database not initialized. Call init() first.'));
+    }
+    
+    db.run(
+      'INSERT INTO interactions (query, response) VALUES (?, ?)',
+      [query, response],
+      function(err) {
+        if (err) {
+          console.error('Error saving interaction:', err.message);
+          return reject(err);
+        }
+        
+        console.log(`Interaction saved with ID: ${this.lastID}`);
+        resolve(this.lastID);
+      }
+    );
+  });
+}
+
+/**
+ * Get recent interactions from the database
+ * @param {number} limit - Maximum number of interactions to retrieve
+ * @returns {Promise<Array>} - Array of interaction objects
+ */
+function getInteractions(limit = 10) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      return reject(new Error('Database not initialized. Call init() first.'));
+    }
+    
+    db.all(
+      'SELECT * FROM interactions ORDER BY timestamp DESC LIMIT ?',
+      [limit],
+      (err, rows) => {
+        if (err) {
+          console.error('Error retrieving interactions:', err.message);
+          return reject(err);
+        }
+        
+        console.log(`Retrieved ${rows.length} interactions`);
+        resolve(rows);
+      }
+    );
+  });
+}
+
+/**
+ * Close the database connection
+ * @returns {Promise<void>}
+ */
+function close() {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      return resolve();
+    }
+    
+    db.close((err) => {
+      if (err) {
+        console.error('Error closing database:', err.message);
+        return reject(err);
+      }
+      
+      console.log('Database connection closed');
+      db = null;
+      resolve();
+    });
+  });
+}
+
+module.exports = { 
+  init, 
+  saveInteraction, 
+  getInteractions,
+  close
+};
+```
+
+</details>
+
+## API Integration Rule
+
+This rule helps you implement API integrations for the Prioris V0 prototype, focusing on OpenAI and Google Cloud Text-to-Speech.
+
+<details>
+<summary>**Click to see the complete API Integration rule**</summary>
+
+```
+# Prioris V0 API Integration Rule
+# This rule helps with integrating external APIs
+
+# Define which files this rule applies to
+*.js
+src/*.js
+src/api/*.js
+src/services/*.js
+
+# Include setup rule for context
+@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+
+# Rule content below
+When helping with the Prioris V0 API integrations:
+
+1. OpenAI Integration:
+   - Use the official openai npm package
+   - Set up a proper Configuration with API key from environment variables
+   - Use the ChatCompletion API for conversations
+   - Set a reasonable model (gpt-4 or gpt-3.5-turbo)
+   - Create a consistent system prompt for Prioris
+   - Handle API responses correctly
+   - Extract the message content from responses
+   - Set appropriate parameters (temperature, max_tokens, etc.)
+   - Implement proper error handling for API limits
+
+2. Google Cloud TTS Integration:
+   - Use the @google-cloud/text-to-speech package
+   - Set up authentication using credentials file path
+   - Choose appropriate voice settings
+   - Support multiple languages
+   - Select good default audio settings
+   - Save audio output to a file
+   - Properly handle audio binary data
+   - Implement audio format options
+
+3. API Error Handling:
+   - Handle network errors
+   - Handle rate limiting errors
+   - Implement exponential backoff for retries
+   - Provide clear error messages to users
+   - Log errors for debugging
+   - Handle authentication errors
+   - Validate inputs before sending to APIs
+
+4. API Security:
+   - Never hardcode API keys in source code
+   - Use environment variables for credentials
+   - Keep credentials file secure
+   - Set appropriate permissions for output files
+   - Validate and sanitize user input
+   - Use HTTPS for all API connections
+   - Follow principle of least privilege
+
+5. API Architecture:
+   - Create abstraction layers for APIs
+   - Implement service objects for API calls
+   - Separate concerns between APIs and business logic
+   - Make API services easily swappable
+   - Implement caching where appropriate
+   - Use dependency injection for testing
+
+6. Performance Considerations:
+   - Implement request timeouts
+   - Handle concurrent requests appropriately
+   - Consider streaming responses for long outputs
+   - Optimize request payload sizes
+   - Implement connection pooling when applicable
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**OpenAI Service (src/services/openai-service.js)**</summary>
+
+```javascript
+// src/services/openai-service.js
+const { Configuration, OpenAIApi } = require('openai');
+
+// Default system prompt for Prioris
+const DEFAULT_SYSTEM_PROMPT = 'You are Prioris, a helpful personal assistant. Provide concise, accurate, and helpful responses.';
+
+class OpenAIService {
+  constructor(apiKey, options = {}) {
+    if (!apiKey) {
+      throw new Error('OpenAI API key is required');
+    }
+    
+    this.configuration = new Configuration({
+      apiKey: apiKey,
+    });
+    
+    this.openai = new OpenAIApi(this.configuration);
+    
+    this.options = {
+      model: options.model || 'gpt-4',
+      temperature: options.temperature || 0.7,
+      maxTokens: options.maxTokens || 2048,
+      systemPrompt: options.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+      timeoutMs: options.timeoutMs || 30000, // 30 seconds timeout
+      maxRetries: options.maxRetries || 3
+    };
+  }
+  
+  /**
+   * Ask a question to the AI assistant
+   * @param {string} query - The user's question
+   * @returns {Promise<string>} - The assistant's response
+   */
+  async ask(query) {
+    let retryCount = 0;
+    
+    while (retryCount <= this.options.maxRetries) {
+      try {
+        const response = await this.openai.createChatCompletion({
+          model: this.options.model,
+          messages: [
+            { role: 'system', content: this.options.systemPrompt },
+            { role: 'user', content: query }
+          ],
+          temperature: this.options.temperature,
+          max_tokens: this.options.maxTokens,
+          timeout: this.options.timeoutMs
+        });
+        
+        if (response.data && 
+            response.data.choices && 
+            response.data.choices.length > 0 &&
+            response.data.choices[0].message) {
+          return response.data.choices[0].message.content.trim();
+        } else {
+          throw new Error('Unexpected response format from OpenAI API');
+        }
+      } catch (error) {
+        // Check if we should retry
+        if (this.isRetryableError(error) && retryCount < this.options.maxRetries) {
+          retryCount++;
+          // Exponential backoff: 1s, 2s, 4s, etc.
+          const delay = Math.pow(2, retryCount) * 1000;
+          console.log(`Retrying OpenAI request after ${delay}ms (${retryCount}/${this.options.maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          // Either not retryable or we've exhausted retries
+          this.handleApiError(error);
+          throw error;
+        }
+      }
+    }
+  }
+  
+  /**
+   * Check if an error is retryable
+   * @param {Error} error - The error to check
+   * @returns {boolean} - Whether the error is retryable
+   */
+  isRetryableError(error) {
+    // Network errors
+    if (!error.response) return true;
+    
+    // Rate limiting errors
+    if (error.response && (error.response.status === 429 || error.response.status === 503)) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Handle API errors with appropriate messages
+   * @param {Error} error - The error to handle
+   */
+  handleApiError(error) {
+    if (error.response) {
+      // The request was made and the server responded with a non-2xx status
+      const status = error.response.status;
+      
+      if (status === 401) {
+        console.error('Authentication error: Invalid API key');
+      } else if (status === 429) {
+        console.error('Rate limit exceeded: Too many requests');
+      } else if (status === 400) {
+        console.error('Bad request: ', error.response.data);
+      } else if (status >= 500) {
+        console.error('OpenAI service error: Please try again later');
+      } else {
+        console.error(`OpenAI API error (${status}): ${JSON.stringify(error.response.data)}`);
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Network error: No response received from OpenAI API');
+    } else {
+      // Something happened in setting up the request
+      console.error('Error creating request: ', error.message);
+    }
+  }
+}
+
+module.exports = OpenAIService;
+```
+
+</details>
+
+<details>
+<summary>**Text-to-Speech Service (src/services/tts-service.js)**</summary>
+
+```javascript
+// src/services/tts-service.js
+const textToSpeech = require('@google-cloud/text-to-speech');
+const fs = require('fs');
+const util = require('util');
+const writeFile = util.promisify(fs.writeFile);
+
+class TTSService {
+  constructor(credentialsPath) {
+    if (!credentialsPath) {
+      throw new Error('Google Cloud credentials path is required');
+    }
+    
+    // Set credentials path as an environment variable
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
+    
+    // Initialize the client
+    this.client = new textToSpeech.TextToSpeechClient();
+  }
+  
+  /**
+   * Convert text to speech and save to a file
+   * @param {string} text - The text to convert
+   * @param {Object} options - Voice and audio options
+   * @param {string} outputFile - The file to save the audio to
+   * @returns {Promise<string>} - The path to the output file
+   */
+  async textToSpeech(text, options = {}, outputFile = 'output.mp3') {
+    try {
+      // Configure the request
+      const request = {
+        input: { text: text },
+        voice: {
+          languageCode: options.languageCode || 'en-US',
+          ssmlGender: options.gender || 'NEUTRAL',
+          name: options.voiceName
+        },
+        audioConfig: {
+          audioEncoding: options.audioEncoding || 'MP3',
+          pitch: options.pitch || 0,
+          speakingRate: options.speakingRate || 1.0
+        },
+      };
+      
+      // Make the API request
+      const [response] = await this.client.synthesizeSpeech(request);
+      
+      // Write the audio content to file
+      await writeFile(outputFile, response.audioContent, 'binary');
+      
+      console.log(`Audio content written to: ${outputFile}`);
+      return outputFile;
+    } catch (error) {
+      this.handleApiError(error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Handle API errors with appropriate messages
+   * @param {Error} error - The error to handle
+   */
+  handleApiError(error) {
+    if (error.code) {
+      // Google Cloud specific error codes
+      switch (error.code) {
+        case 7:  // PERMISSION_DENIED
+          console.error('Authentication error: Invalid or missing credentials');
+          break;
+        case 8:  // RESOURCE_EXHAUSTED
+          console.error('Quota exceeded or rate limit reached');
+          break;
+        case 3:  // INVALID_ARGUMENT
+          console.error('Invalid request: ', error.message);
+          break;
+        case 13: // INTERNAL
+          console.error('Google Cloud service error: Please try again later');
+          break;
+        default:
+          console.error(`Google Cloud API error (${error.code}): ${error.message}`);
+      }
+    } else {
+      console.error('Error with text-to-speech: ', error.message);
+    }
+  }
+  
+  /**
+   * Get available voices
+   * @param {string} languageCode - Optional language code filter
+   * @returns {Promise<Array>} - Array of available voices
+   */
+  async getVoices(languageCode) {
+    try {
+      const [result] = await this.client.listVoices({languageCode});
+      return result.voices;
+    } catch (error) {
+      this.handleApiError(error);
+      throw error;
+    }
+  }
+}
+
+module.exports = TTSService;
+```
+
+</details>
+
+## Testing and Debugging Rule
+
+This rule helps you test and debug the Prioris V0 prototype to ensure it works correctly before moving on to later development stages.
+
+<details>
+<summary>**Click to see the complete Testing and Debugging rule**</summary>
+
+```
+# Prioris V0 Testing and Debugging Rule
+# This rule helps with testing and debugging the CLI application
+
+# Define which files this rule applies to
+*.js
+*.json
+*.env
+src/*.js
+test/*.js
+__tests__/*.js
+
+# Include setup rule for context
+@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+
+# Rule content below
+When helping with testing and debugging the Prioris V0 CLI:
+
+1. Manual Testing Approach:
+   - Test each command individually with various inputs
+   - Test the CLI with valid and invalid environment variables
+   - Check for proper error handling and user feedback
+   - Test with different input types and edge cases
+   - Verify database operations are working correctly
+   - Test integration with external APIs
+   - Test CLI executable permissions
+
+2. Common Issues to Check:
+   - Missing environment variables or configuration
+   - Database connection issues
+   - API authentication problems
+   - Path and permission issues for file operations
+   - Command syntax or usage problems
+   - Error handling gaps
+   - Dependency installation issues
+   - Version compatibility problems
+
+3. Debugging Techniques:
+   - Add strategic console.log statements
+   - Use proper error objects with stack traces
+   - Check for typos in variable names
+   - Verify file paths are correct
+   - Use try/catch blocks to isolate issues
+   - Test API calls in isolation
+   - Check database connectivity and queries
+   - Verify npm dependencies are installed
+
+4. Environment Setup Validation:
+   - Confirm Node.js version is compatible
+   - Verify all dependencies are installed
+   - Check that API keys are valid and working
+   - Confirm database path is writable
+   - Verify file system permissions
+   - Test network connectivity for API calls
+   - Check for conflicts with other global npm packages
+
+5. Test Scripts and Commands:
+   - Create simple test scripts for common operations
+   - Use npm scripts for testing routines
+   - Test the CLI in a clean environment
+   - Document manual test procedures
+   - Create test data for consistent testing
+   - Create isolated test environments
+   - Implement cleanup routines after tests
+
+6. Documentation for Troubleshooting:
+   - Document common errors and solutions
+   - Add troubleshooting tips to README
+   - Include setup validation steps
+   - Document required environment variables
+   - Provide example commands and expected output
+   - Include contact information for support
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**Testing Script (test/manual-test.js)**</summary>
+
+```javascript
+// test/manual-test.js
+require('dotenv').config();
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+// Define test cases
+const tests = [
+  {
+    name: 'Help command',
+    cmd: 'prioris --help',
+    expectedInOutput: 'Usage: prioris'
+  },
+  {
+    name: 'Ask command',
+    cmd: 'prioris ask "What is the capital of France?"',
+    expectedInOutput: 'Paris'
+  },
+  {
+    name: 'Remember command',
+    cmd: 'prioris remember',
+    expectedInOutput: 'Interaction'
+  },
+  {
+    name: 'Speak command',
+    cmd: 'prioris speak "Hello world" -o test-output.mp3',
+    expectedInOutput: 'Audio content written to',
+    cleanup: () => {
+      if (fs.existsSync('test-output.mp3')) {
+        fs.unlinkSync('test-output.mp3');
+        console.log('Cleaned up test audio file');
+      }
+    }
+  }
+];
+
+// Run tests
+console.log('Running Prioris CLI tests...\n');
+
+let passed = 0;
+let failed = 0;
+
+for (const test of tests) {
+  try {
+    console.log(`Test: ${test.name}`);
+    
+    // Execute the command
+    const output = execSync(test.cmd).toString();
+    
+    // Check if expected text is in the output
+    if (output.includes(test.expectedInOutput)) {
+      console.log(`✅ PASSED: Output contains "${test.expectedInOutput}"`);
+      passed++;
+    } else {
+      console.log(`❌ FAILED: Output does not contain "${test.expectedInOutput}"`);
+      console.log(`Output: ${output.trim()}`);
+      failed++;
+    }
+    
+    // Run cleanup function if provided
+    if (test.cleanup) {
+      test.cleanup();
+    }
+    
+  } catch (error) {
+    console.log(`❌ FAILED: Command execution error`);
+    console.log(`Error: ${error.message}`);
+    failed++;
+  }
+  
+  console.log(''); // Add empty line between tests
+}
+
+// Print summary
+console.log(`Test summary: ${passed} passed, ${failed} failed`);
+process.exit(failed > 0 ? 1 : 0);
+```
+
+</details>
+
+## How to Use These Rules
+
+1. **Copy the rule content**: Click on the dropdown for the specific rule you need
+2. **Create a file**: In your project, create a file at <code>.cursor/rules/prioris-v0-step1-[component].cursorignore</code>
+3. **Paste the rule**: Paste the copied content into the file
+4. **Start developing**: As you work on the component, Cursor will provide guidance based on the rule
+
+You can also chain rules together using the <code>@file</code> reference system:
+
+```
+# In other rules, include the setup rule for context
+@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+
+# Additional rule content below
+```

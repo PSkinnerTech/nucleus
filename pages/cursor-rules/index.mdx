@@ -1,0 +1,52 @@
+---
+title: "Cursor Rules Guide"
+navOrder: 1
+---
+
+# Understanding Cursor Rules
+
+Cursor Rules are a powerful way to customize AI behavior in Cursor. They act as instructions or system prompts for the underlying LLM, helping you get more consistent and specialized assistance.
+
+## Types of Cursor Rules
+
+### 1. Project Rules (Recommended)
+
+Project rules are specific to a project and stored in the `.cursor/rules` directory. These rules offer:
+
+- **Semantic Descriptions**: Each rule includes instructions on when it should be applied
+- **File Pattern Matching**: Uses gitignore-style patterns to specify which files/folders the rule applies to
+- **Automatic Attachment**: Rules are automatically included when matching files are referenced
+- **Reference files**: Use `@file` in your rules to include other files as context
+
+### 2. Global Rules
+
+Global rules apply to all projects and are configured in `Cursor Settings` > `General` > `Rules for AI`. These are useful for consistent preferences across all projects.
+
+### 3. Legacy .cursorrules (Deprecated)
+
+While still supported for backward compatibility, the `.cursorrules` file in the project root is being phased out in favor of the more flexible Project Rules system.
+
+## Rule Categories in This Guide
+
+This guide is organized into two main categories:
+
+### [Basic Rules](/cursor-rules/basic-rules)
+
+General-purpose rules that can be applied to most projects:
+- Language-specific conventions (React, Python, etc.)
+- Workflow optimizations (code reviews, documentation, etc.)
+- General best practices and patterns
+
+### [Project-Specific Rules](/cursor-rules/v0)
+
+Rules tailored for specific projects, including:
+- Rules for the Prioris V0 developer and testing guide
+- Step-by-step implementation rules for specific features
+
+## Creating a New Rule
+
+To create a new rule:
+1. Use the command palette: `Cmd + Shift + P` > `New Cursor Rule`
+2. Or manually create a file in the `.cursor/rules` directory with the `.cursorignore` extension
+
+Browse through the sections to find rules that fit your needs, or use them as starting points to create your own customized rules. 

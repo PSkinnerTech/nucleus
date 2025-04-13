@@ -8,6 +8,8 @@
 | -------- | ------- | -------------- |
 | Should Prioris run fully self-hosted or use managed services for LLMs and APIs? | - Fully self-hosted<br/>- Hybrid (self-hosted context, managed LLMs)<br/>- Fully managed | Self-hosting gives full control and privacy. Hybrid allows faster setup. Fully managed simplifies ops but may limit customization and increase cost. |
 
+**Answer:** For prioritizing fast, high-quality responses and reliable connectivity, the **Hybrid approach** is optimal. Self-host the MCP Server and Memory components for privacy and control over personal data, while using managed LLM services (like OpenAI, Anthropic) for superior model performance and API reliability. This provides the best balance between response quality, speed, and uptime without requiring the massive infrastructure needed for self-hosting cutting-edge LLMs.
+
 ---
 
 ### 🧠 Agent Autonomy
@@ -15,6 +17,8 @@
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
 | Should agents (e.g. email, calendar, purchase) act autonomously or always ask before executing? | - Always ask<br/>- Ask only for sensitive actions<br/>- Fully autonomous (user-defined) | Autonomy increases fluidity but raises risk. Best approach is per-agent permissions with user toggles. |
+
+**Answer:** The optimal approach is **Ask only for sensitive actions** with user-configurable permissions. This provides the best balance between convenience and safety. Implement a tiered permission system where routine actions (checking calendar, creating reminders) run autonomously, while sensitive operations (sending emails, making purchases, booking appointments) require confirmation. Allow users to adjust these permissions per agent category based on their comfort level, potentially relaxing restrictions over time as trust is established.
 
 ---
 
@@ -24,6 +28,8 @@
 | -------- | ------- | -------------- |
 | Will Prioris be fully voice-controlled or also feature a GUI dashboard? | - Voice-only<br/>- Voice + Web Dashboard<br/>- Native mobile/desktop app | Web dashboard is useful for managing settings, reviewing memory, and debugging. Voice-only may suffice for minimal interfaces like wearables. |
 
+**Answer:** The optimal choice is **Voice + Web Dashboard**. Voice control provides seamless, hands-free interaction ideal for quick tasks and wearable devices. A complementary web dashboard significantly enhances usability by allowing users to manage settings, review and edit memory, debug interactions, and handle complex tasks more efficiently. This hybrid approach ensures accessibility, flexibility, and ease of use across various scenarios and user preferences.
+
 ---
 
 ### 📦 Plugin & Automation System
@@ -31,6 +37,8 @@
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
 | Should Prioris support third-party plugins or only allow curated integrations? | - Closed system (only official integrations)<br/>- Curated marketplace<br/>- Open plugin architecture | Open plugins increase extensibility and community growth, but introduce security risks. May require a review/approval mechanism. |
+
+**Answer:** The best approach is a **Curated marketplace**. This strikes a balance between extensibility, security, and quality control. Allowing third-party developers to contribute plugins fosters community growth and innovation, while a curated review and approval process ensures security, reliability, and a consistent user experience. Over time, this approach can evolve into a more open architecture as robust security and review mechanisms mature.
 
 ---
 
@@ -40,6 +48,8 @@
 | -------- | ------- | -------------- |
 | How long should Prioris remember conversations, facts, and preferences? | - Session only<br/>- Manual save to long-term memory<br/>- Auto-learn mode with manual forget | More memory = better context. But retention must be transparent, editable, and secure. User-facing memory controls are key. |
 
+**Answer:** The optimal choice is **Auto-learn mode with manual forget**. This approach maximizes context-awareness and personalization by automatically retaining useful information, while still empowering users with clear, transparent, and easy-to-use controls to review, edit, or delete stored memories. Providing intuitive memory management tools ensures user trust, privacy, and control over their data.
+
 ---
 
 ### 🔐 Privacy & Security Preferences
@@ -48,10 +58,64 @@
 | -------- | ------- | -------------- |
 | What privacy guarantees does Prioris provide by default? | - Local-first data retention<br/>- Fully encrypted logs and tokens<br/>- On-device execution when possible | Transparency and privacy-preserving defaults should be a cornerstone of the assistant's trust model. Voiceprint auth and passcode fallback add layers. |
 
+**Answer:** The recommended default is a combination of **Local-first data retention**, **Fully encrypted logs and tokens**, and **On-device execution when possible**. This comprehensive approach ensures maximum privacy and security, building user trust from the outset. Prioritize local data handling and encryption, and clearly communicate these privacy measures to users. Additionally, implement optional voiceprint authentication and passcode fallback mechanisms to further enhance security and user confidence.
+
 ---
 
 ### ⚙️ Model Preference & Runtime Behavior
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| Should the user be able to choose which model handles a request? | - Smart auto-routing only<br/>- Manual override per task<br/>- Persistent model preferences | Auto-routing is fast, but some users may want explicit control (e.g., "use Claude for code tasks, GPT-4 for creative writing"). This can also help with cost optimization. | 
+| Should the user be able to choose which model handles a request? | - Smart auto-routing only<br/>- Manual override per task<br/>- Persistent model preferences | Auto-routing is fast, but some users may want explicit control (e.g., "use Claude for code tasks, GPT-4 for creative writing"). This can also help with cost optimization. |
+
+**Answer:** The optimal approach is **Smart auto-routing with Manual override per task**. This provides the best balance between efficiency, ease of use, and flexibility. Auto-routing ensures fast, optimized responses by default, while manual overrides empower advanced users to select specific models for specialized tasks or cost optimization. Persistent model preferences could be considered as a future enhancement based on user feedback and usage patterns.
+
+---
+
+### 🌐 Multi-language & Localization Support
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Should Prioris support multiple languages and localization from the start, or initially focus on a single language? | - Single language initially<br/>- Multi-language support from start<br/>- Single language with future expansion | Multi-language support broadens accessibility but adds complexity in STT/TTS engines, model selection, and localization of responses. |
+
+---
+
+### 📈 Analytics & Usage Insights
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Should Prioris include built-in analytics and usage insights for users? | - No analytics<br/>- Basic usage analytics (opt-in)<br/>- Detailed analytics dashboard | Analytics help users optimize interactions but must respect privacy, transparency, and user consent. |
+
+---
+
+### 🔄 Backup & Data Portability
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| How should Prioris handle data backups and portability? | - No backups<br/>- Manual export/import<br/>- Automatic encrypted backups | Secure and easy data portability enhances trust and flexibility, especially important for long-term adoption. |
+
+---
+
+### 🧑‍🤝‍🧑 Multi-user & Collaboration Features
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Should Prioris support multi-user scenarios or collaborative tasks? | - Single-user only<br/>- Basic multi-user support<br/>- Advanced collaboration features | Multi-user support enhances utility in family or team contexts but introduces complexity around permissions, privacy, and data management. |
+
+---
+
+### 🔧 Customization & Extensibility
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| How customizable should Prioris be in terms of personality, response style, and interaction patterns? | - Minimal customization<br/>- Moderate customization (preset personalities)<br/>- Deep customization (fully user-defined) | Deep customization enhances user satisfaction but requires careful design to avoid overwhelming users. |
+
+---
+
+### 📱 Cross-platform Consistency
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Should Prioris provide a consistent experience across all platforms (wearables, mobile, desktop, web)? | - Platform-specific optimizations<br/>- Consistent cross-platform experience<br/>- Hybrid (core consistency with platform-specific enhancements) | Consistency improves user experience but may limit platform-specific optimizations. |
+
+--- 

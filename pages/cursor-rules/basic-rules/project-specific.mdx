@@ -1,0 +1,225 @@
+---
+title: "Project-Specific Rules"
+navOrder: 5
+---
+
+# Project-Specific Rules
+
+This example demonstrates how to create Cursor rules that enforce team-specific conventions and architectural patterns for a project.
+
+## Use Case
+
+Project-specific rules are valuable for:
+
+- Onboarding new team members
+- Ensuring consistent implementation of architectural patterns
+- Enforcing business logic patterns and naming
+- Maintaining code quality across the team
+
+## Example: E-Commerce Platform Rule
+
+This example shows a rule for a fictional e-commerce platform with specific architectural patterns and business domain language requirements.
+
+Create a file at `.cursor/rules/ecommerce-project.cursorignore`:
+
+```
+# E-Commerce Platform Project Rules
+# Enforces project-specific patterns and domain language
+
+# Define which files this rule applies to
+src/**/*
+app/**/*
+lib/**/*
+services/**/*
+models/**/*
+
+# Rule content below
+When helping with code for our e-commerce platform, follow these project-specific conventions:
+
+### Architecture
+1. Follow our layered architecture:
+   - Presentation Layer (React components, pages)
+   - Domain Layer (business logic, services)
+   - Data Access Layer (repositories, API clients)
+   - Infrastructure Layer (utilities, configuration)
+
+2. Service pattern:
+   - Services should be in the `services/` directory
+   - Each service should handle a specific domain concept (e.g., CartService, ProductService)
+   - Services should not import from the presentation layer
+   - Services should not directly interface with external APIs - use repositories
+
+3. Repository pattern:
+   - Repositories should be in the `repositories/` directory
+   - Each repository handles data access for a specific domain model
+   - Repositories encapsulate all data sources (API, localStorage, etc.)
+   - All external data access should go through repositories
+
+### Domain Language
+Use consistent terminology for our domain concepts:
+
+1. Products:
+   - "Product" - An item for sale 
+   - "SKU" - Stock keeping unit
+   - "Variant" - Specific version of a product (e.g., color, size)
+   - "Category" - Product classification
+   - "Collection" - Curated group of products
+
+2. Shopping:
+   - "Cart" - Current shopping session
+   - "Order" - Confirmed purchase
+   - "Checkout" - Process of completing an order
+   - "LineItem" - Individual product in cart/order
+   - "Fulfillment" - Delivery or pickup process
+
+3. Users:
+   - "Customer" - Person shopping
+   - "Account" - Customer's profile
+   - "Guest" - Unauthenticated customer
+   - "Wishlist" - Saved products for future purchase
+
+### Naming Conventions
+1. React components:
+   - PascalCase for component names
+   - Prefix page components with "Page" (e.g., ProductDetailPage)
+   - UI components should be generic (e.g., Button, Card)
+   - Domain components should be specific (e.g., ProductCard, CartSummary)
+
+2. Services and repositories:
+   - PascalCase + "Service" or "Repository" suffix
+   - e.g., ProductService, OrderRepository
+
+3. Functions:
+   - Prefix getters with "get" (e.g., getProductById)
+   - Prefix operations with verbs (e.g., updateCart, placeOrder)
+   - Prefix state changes with their effect (e.g., addToCart, removeFromWishlist)
+
+### Data Handling
+1. API data:
+   - Use DTOs (Data Transfer Objects) in the repository layer
+   - Transform DTOs to domain models before passing to services
+   - Use Zod for schema validation
+
+2. State management:
+   - Use React Context for global state
+   - Follow context naming pattern: <Domain>Context, <Domain>Provider, use<Domain>
+   - Use local state for UI-specific state
+   - Derive computed properties rather than storing them
+
+### Error Handling
+1. Use custom error classes for domain-specific errors
+2. Handle expected exceptions in services
+3. Log unexpected errors with error tracking service
+4. Provide user-friendly error messages for expected errors
+
+### Testing
+1. Unit test all business logic in services
+2. Use integration tests for repositories
+3. Use component tests for UI components
+4. Name tests descriptively with pattern: "should <expected behavior> when <condition>"
+```
+
+## Another Example: Analytics Service Rules
+
+This demonstrates a rule for a fictional analytics service with specific requirements for tracking and reporting:
+
+Create a file at `.cursor/rules/analytics-project.cursorignore`:
+
+```
+# Analytics Service Project Rules
+# Enforces conventions for our analytics platform
+
+# Define which files this rule applies to
+src/**/*
+lib/**/*
+utils/analytics/**/*
+components/tracking/**/*
+
+# Rule content below
+When helping with code for our analytics platform, follow these project-specific conventions:
+
+### Event Tracking
+1. Use our standardized event tracking API:
+   - `trackEvent(category, action, label, value)`
+   - `trackPageView(pageUrl, pageTitle)`
+   - `trackConversion(goalId, value)`
+
+2. Event naming conventions:
+   - Categories: PascalCase (e.g., "UserAccount", "Purchase", "ContentInteraction")
+   - Actions: lowercase with hyphens (e.g., "button-click", "form-submit", "page-scroll")
+   - Labels: contextual information in lowercase (e.g., "homepage-hero", "pricing-tier-pro")
+
+3. Custom dimensions:
+   - Reference by name, not index (e.g., `setDimension('userType', 'premium')`)
+   - Follow our data dictionary for dimension names
+
+### Data Processing
+1. Data transformation:
+   - Use stream processing for real-time data
+   - Use batch processing for historical data
+   - All transformations should be pure functions
+
+2. Aggregations:
+   - Use standard aggregation functions from our utils library
+   - Document time windows for all aggregations
+   - Include margin of error for sampled data
+
+### Visualization
+1. Chart components:
+   - All charts should use our ChartWrapper component
+   - Include accessibility descriptions for all visualizations
+   - Support dark/light mode
+
+2. Dashboard layout:
+   - Use grid system for layout
+   - Support responsive design for all screen sizes
+   - Follow progressive disclosure pattern for complex data
+
+### Privacy Compliance
+1. PII handling:
+   - Never log personally identifiable information
+   - Use anonymized IDs for user tracking
+   - Apply data masking for sensitive fields
+   - Support data deletion requests
+
+2. Consent management:
+   - Check user consent before tracking
+   - Respect Do Not Track settings
+   - Provide opt-out mechanism
+
+### Performance
+1. Data loading:
+   - Use pagination for large datasets
+   - Implement virtual scrolling for long lists
+   - Show loading indicators for async operations
+   - Cache repeated queries
+
+2. Processing:
+   - Use web workers for heavy calculations
+   - Implement request batching where appropriate
+   - Use incremental processing for large datasets
+
+### Documentation
+1. Code comments:
+   - Document the "why" not just the "what"
+   - Explain business logic rationale
+   - Document performance considerations
+
+2. Metrics documentation:
+   - Define how each metric is calculated
+   - Document data sources
+   - Note limitations and caveats
+```
+
+## Creating Your Project Rules
+
+When creating your own project rules:
+
+1. **Analyze existing code**: Identify patterns in your current codebase
+2. **Consult the team**: Get input from team members on conventions
+3. **Document domain language**: Ensure consistent terminology
+4. **Define architecture**: Clarify high-level architectural patterns
+5. **Start small**: Begin with critical patterns and evolve over time
+6. **Update regularly**: Revisit rules as the project evolves
+
+Project-specific rules can dramatically improve consistency and help maintain quality as the team and codebase grow. 

@@ -1,13 +1,36 @@
 # Feature Prioritization Matrix
 
-Priority	Definition
-🟢 V1 — Must Have	MVP-level features that make Prioris usable and powerful for daily tasks
-🟡 V2 — High Value	Features that build depth and feel but aren't critical for daily function
-🔵 V3 — Stretch Goals	Features that push Prioris into "magical" territory but can be layered in later
+Priority	Definition  
+🟣 V0 — Prototype	Minimal working features for a testable assistant experience  
+🟢 V1 — Must Have	MVP-level features that make Prioris usable and powerful for daily tasks  
+🟡 V2 — High Value	Features that build depth and feel but aren't critical for daily function  
+🔵 V3 — Stretch Goals	Features that push Prioris into "magical" territory but can be layered in later  
 
 ---
 
 ## 🧠 Prioris Feature Prioritization Matrix
+
+### 🟣 V0 — Prototype
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Push-to-talk or basic wake word | 🟣 V0 | Manual keypress or minimal wake word trigger |
+| Basic STT (speech-to-text) | 🟣 V0 | Use Whisper or Deepgram to transcribe |
+| Basic TTS (text-to-speech) | 🟣 V0 | Use Google Cloud TTS for quality with Coqui TTS planned for offline fallback |
+| One-shot command execution | 🟣 V0 | Prompt → response with no memory or context |
+| Simple list storage (local) | 🟣 V0 | Store basic tasks or notes in JSON or flat file |
+| Local timer/reminder | 🟣 V0 | Trigger basic alert, no calendar integration |
+| Static GPT-4 request | 🟣 V0 | Simple API call to LLM without dynamic routing |
+| Web search + summary | 🟣 V0 | Use SerpAPI or similar and summarize via LLM |
+| Telegram echo bot | 🟣 V0 | Send/reply to messages using a bot interface |
+| Fake email draft | 🟣 V0 | Simulate email creation, no sending logic |
+| CLI interface | 🟣 V0 | Command-line version of Prioris for dev/test |
+| Local memory (JSON or SQLite) | 🟣 V0 | Simple persistent key-value store |
+| Hardcoded personality prompt | 🟣 V0 | Single system prompt to define Prioris' tone |
+
+---
+
+*The rest of the matrix remains unchanged below this point.*
 
 ### 🔹 Core Conversation Layer
 
@@ -69,6 +92,7 @@ Priority	Definition
 | Local file/document ingestion | 🟡 V2 | Easy with PDF parsing, markdown support |
 | Real-time agent chaining | 🔵 V3 | Requires solid agent orchestration layer |
 | Command-line access | 🔵 V3 | Useful, but niche — add if you want full control ops |
+| RLHF-style feedback training | 🟢 V1 | Personalizes Prioris over time based on user correction |
 
 ---
 
@@ -78,9 +102,10 @@ Priority	Definition
 | ------- | -------- | ----- |
 | MCP for model context | 🟢 V1 | Core to the app — use for parallel context tracking |
 | Hyperbolic model routing | 🟢 V1 | Start here for model switching + long-context tasks |
-| Local model fallback (e.g., Ollama) | 🟡 V2 | Optional, but good for offline privacy use |
+| Local model fallback (e.g., Ollama) | 🟢 V1 | Critical for offline/local fallback and privacy |
 | Unified logging + feedback | 🟢 V1 | "Why did you say that?" style correction |
 | Plugin/add-on system | 🔵 V3 | Useful long-term for scalability and 3rd-party tools |
+| Agent permission configuration | 🟢 V1 | Optional per task — open-ended agents can request confirmation before execution |
 
 ---
 
@@ -98,15 +123,56 @@ Priority	Definition
 
 | Priority Level | Count of Features |
 | -------------- | ----------------- |
-| 🟢 V1 (Build first) | 20 |
+| 🟢 V1 (Build first) | 21 |
 | 🟡 V2 (High-value additions) | 15 |
 | 🔵 V3 (Stretch goals) | 10 |
 
 ---
 
-## Open Questions
-- Yes, we want offline/local fallback.
-- Yes, we will allow it to have as much control as we can allow it to have.
-- Yes, we should include RLHF-style feedback training.
-- Self-hosting vs. Managed Services: What do you recommend?
-- Open-Ended agents should ask for permission optionally. 
+### 📦 Plugin & Automation System
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Curated plugin marketplace | 🟡 V2 | Allow third-party plugins with a review and approval process |
+
+---
+
+### 🌐 Multi-language & Localization
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Multi-language support (future expansion) | 🔵 V3 | Initially single language, plan for future localization |
+
+---
+
+### 📈 Analytics & Usage Insights
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Basic analytics (opt-in) | 🟡 V2 | Provide basic usage insights respecting user privacy |
+
+---
+
+### 🔄 Backup & Data Portability
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Automatic encrypted backups | 🟢 V1 | Ensure secure data backups and easy portability |
+
+---
+
+### 🧑‍🤝‍🧑 Multi-user & Collaboration
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Basic multi-user support | 🟡 V2 | Allow multiple users with basic permissions and data separation |
+
+---
+
+### 📱 Cross-platform Consistency
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Hybrid cross-platform consistency | 🟡 V2 | Core consistency with platform-specific enhancements |
+
+---

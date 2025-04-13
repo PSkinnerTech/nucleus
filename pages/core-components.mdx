@@ -7,7 +7,7 @@
 Handles all real-time input/output via audio interfaces.
 - Omi Wearable: Wake-word detection, always-on microphone, and speaker for continuous interaction
 - STT Engine: Converts spoken input to text (e.g., Whisper, Deepgram)
-- TTS Engine: Converts textual responses into natural voice replies (e.g., ElevenLabs, Google TTS)
+- TTS Engine: Converts textual responses into natural voice replies (primary: Google Cloud TTS, offline fallback: Coqui TTS)
 - Wake Word / Toggle System: Activates listening mode and toggles always-on functionality via specific voice commands
 
 ---
@@ -23,6 +23,7 @@ The brain of Prioris, coordinating tasks, managing context, and driving personal
   - Shares memory and context between agents
 - RLHF Feedback Trainer: Learns from user feedback ("Yes, that's correct" / "That's wrong") to refine behavior over time
 - Agent Permissions System: Allows or requires approval before autonomous agents execute tasks (e.g., sending emails, booking services)
+- **Model Routing with Manual Override:** Smart auto-routing with optional manual override per task for advanced user control.
 
 ---
 

@@ -8,7 +8,7 @@
 | --------- | ----------------- | ------- |
 | Hardware Interface | Omi | Always-on wearable with mic/speaker and wake-word support |
 | STT Engine | Whisper, Deepgram | Transcribe user speech to text |
-| TTS Engine | ElevenLabs, Google TTS | Turn responses into natural speech |
+| TTS Engine | Google Cloud TTS, Coqui TTS (offline fallback) | Turn responses into natural speech |
 | Wake Word Engine | Porcupine, custom lightweight listener | Toggle listening and interaction modes via voice |
 
 ---
@@ -17,7 +17,7 @@
 
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
-| Agent Framework | LangChain, AutoGen, or custom | Handle multi-agent workflows, parallel tasks |
+| Model Routing & Override | Hyperbolic + manual override | Smart auto-routing with optional manual override per task |
 | Task Dispatcher | Custom queue logic or Temporal | Route requests to appropriate agents or APIs |
 | RLHF Training | Manual feedback loop → vector db | Learn from user thumbs-up/down or voice correction |
 | Agent Permissions | Custom config per agent | Confirm before executing sensitive commands |
@@ -68,4 +68,36 @@
 | Auth Layer | NextAuth.js, Clerk.dev, or Supabase Auth | OAuth2 and user session management |
 | Queue & Scheduler | Celery (Python), Temporal (JS/Go) | Schedule jobs, manage agent chains |
 | Containerization | Docker + Docker Compose | Encapsulate services and dependencies |
-| Self-Hosting | VPS (e.g., Hetzner, Fly.io) or local NUC | Host MCP, memory, agents for maximum control/privacy | 
+| Self-Hosting | VPS (e.g., Hetzner, Fly.io) or local NUC | Host MCP, memory, agents for maximum control/privacy |
+
+---
+
+### 📦 Plugin & Automation System
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| Curated Plugin Marketplace | Custom review/approval system | Allow third-party plugins with security and quality control |
+
+---
+
+### 📈 Analytics & Usage Insights
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| Basic Analytics (opt-in) | Plausible, Umami, or custom analytics | Provide basic usage insights respecting user privacy |
+
+---
+
+### 🔄 Backup & Data Portability
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| Automatic Encrypted Backups | Restic, BorgBackup, or custom scripts | Secure, automated backups and easy data portability |
+
+---
+
+### 📱 Cross-platform Consistency
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| Hybrid Cross-platform Consistency | React Native, Electron, Tauri | Core consistency with platform-specific enhancements | 

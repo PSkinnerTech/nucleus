@@ -1,0 +1,294 @@
+---
+title: "Workflow-Specific Rules"
+navOrder: 7
+---
+
+# Workflow-Specific Cursor Rules
+
+This guide demonstrates how to create Cursor rules tailored to specific development workflows such as code reviews, documentation, and debugging.
+
+## Why Create Workflow-Specific Rules?
+
+Different development activities often require different AI guidance. By creating rules for specific workflows, you can:
+
+- Get more specialized assistance for particular tasks
+- Reduce the need to repeatedly provide the same instructions
+- Establish consistent approaches to common development activities
+
+## Code Review Rules
+
+Create a file at `.cursor/rules/code-review.cursorignore`:
+
+```
+# Code Review Rules
+# Used when reviewing code and providing feedback
+
+# Define which files this rule applies to
+*.*
+
+# Rule content below
+When helping with code reviews, follow these guidelines:
+
+1. Analysis approach:
+   - First scan for security issues and vulnerabilities
+   - Look for performance bottlenecks
+   - Check error handling and edge cases
+   - Examine code clarity and maintainability
+   - Consider test coverage
+
+2. Security checks:
+   - Identify input validation issues
+   - Flag potential injection vulnerabilities
+   - Check for proper authentication/authorization
+   - Look for sensitive data exposure
+   - Identify insecure cryptographic implementations
+
+3. Performance checks:
+   - Identify inefficient algorithms (O(n²) when O(n) is possible, etc.)
+   - Check for unnecessary database queries or API calls
+   - Look for memory leaks or excessive resource usage
+   - Identify potential concurrency issues
+   - Flag redundant computations
+
+4. Code quality checks:
+   - Identify duplicated code
+   - Flag overly complex methods (high cyclomatic complexity)
+   - Check for SOLID principles violations
+   - Look for proper error handling
+   - Evaluate naming clarity
+
+5. Feedback style:
+   - Be specific and actionable
+   - Explain the "why" behind suggestions
+   - Prioritize issues (critical, major, minor)
+   - Include code examples for suggested improvements
+   - Acknowledge positive aspects of the code
+
+6. Documentation check:
+   - Verify that public APIs are documented
+   - Check that complex logic has explanatory comments
+   - Ensure code changes align with project documentation
+   - Verify that any new features are documented
+```
+
+## Debugging Assistance Rules
+
+Create a file at `.cursor/rules/debugging.cursorignore`:
+
+```
+# Debugging Assistance Rules
+# Used when debugging issues or troubleshooting
+
+# Define which files this rule applies to
+*.*
+
+# Rule content below
+When helping with debugging, follow these guidelines:
+
+1. Problem analysis approach:
+   - Start by understanding the expected vs. actual behavior
+   - Identify potential failure points systematically
+   - Consider environment, configuration, and data factors
+   - Look for common error patterns first
+   - Use process of elimination for complex issues
+
+2. Common checks to suggest:
+   - Verify input validation
+   - Check null/undefined handling
+   - Look for off-by-one errors
+   - Examine asynchronous code for race conditions
+   - Verify error handling
+
+3. Language-specific patterns:
+   - For JavaScript/TypeScript:
+     - Check Promise handling and async/await usage
+     - Look for closure-related issues
+     - Verify proper event handling
+   - For Python:
+     - Check for indentation issues
+     - Verify exception handling
+     - Look for common import issues
+   - For Java/C#:
+     - Check for thread safety
+     - Verify resource cleanup
+     - Look for equals/hashCode implementation issues
+
+4. Debugging strategies to suggest:
+   - Binary search through the code (comment out sections)
+   - Add logging at key points
+   - Use debugger breakpoints effectively
+   - Isolate the issue with minimal reproduction
+   - Test in isolation vs. integration
+
+5. Response format:
+   - First suggest the most likely causes
+   - Provide specific debugging steps to verify each hypothesis
+   - Include examples of debugging code to add
+   - Suggest tools or commands that might help
+   - Outline a systematic troubleshooting approach
+```
+
+## Documentation Rules
+
+Create a file at `.cursor/rules/documentation.cursorignore`:
+
+```
+# Documentation Rules
+# Used when writing or improving documentation
+
+# Define which files this rule applies to
+*.md
+*.mdx
+*.txt
+*/docs/**/*
+*/README*
+
+# Rule content below
+When helping with documentation, follow these guidelines:
+
+1. Documentation structure:
+   - Start with a clear purpose statement
+   - Include a brief overview
+   - Organize content from general to specific
+   - Use consistent headings and subheadings
+   - Include a table of contents for longer documents
+
+2. Code examples:
+   - Keep examples concise and focused
+   - Include complete, runnable examples
+   - Comment key parts of the code
+   - Show both basic and advanced usage
+   - Include expected output or results
+
+3. API documentation:
+   - Document all parameters with types and descriptions
+   - Specify return values and types
+   - List exceptions or errors that may be thrown
+   - Include usage examples
+   - Document any side effects
+
+4. User guides:
+   - Focus on user goals, not implementation details
+   - Use step-by-step instructions
+   - Include screenshots where helpful
+   - Anticipate common questions
+   - Provide troubleshooting information
+
+5. Writing style:
+   - Use active voice
+   - Keep sentences and paragraphs short
+   - Define technical terms on first use
+   - Be consistent with terminology
+   - Use numbered steps for procedures
+
+6. Formatting:
+   - Use markdown features effectively
+   - Create tables for structured information
+   - Use code blocks with syntax highlighting
+   - Implement proper link references
+   - Use emphasis sparingly for important points
+```
+
+## Architecture Decision Rules
+
+Create a file at `.cursor/rules/architecture-decisions.cursorignore`:
+
+```
+# Architecture Decision Rules
+# Used when making architectural decisions or writing ADRs
+
+# Define which files this rule applies to
+*/architecture/**/*
+*/docs/adr/**/*
+*.adr.md
+
+# Rule content below
+When helping with architecture decisions, follow these guidelines:
+
+1. Decision structure:
+   - State the problem clearly
+   - List constraints and requirements
+   - Present multiple options
+   - Evaluate each option objectively
+   - Make a clear recommendation with rationale
+
+2. Evaluation criteria:
+   - Performance implications
+   - Scalability considerations
+   - Maintenance and operational overhead
+   - Security implications
+   - Cost factors
+   - Team familiarity and learning curve
+   - Vendor or technology lock-in concerns
+   - Integration complexity
+   - Testing strategy
+
+3. ADR (Architecture Decision Record) format:
+   - Title: Short description of the decision
+   - Status: Proposed, Accepted, Deprecated, Superseded
+   - Context: Background and the forces at play
+   - Decision: The response to these forces
+   - Consequences: The resulting context after applying the decision
+   - References: Additional resources or related decisions
+
+4. Technology selection approach:
+   - Clearly define requirements and constraints
+   - Evaluate at least 3 alternatives
+   - Consider build vs. buy tradeoffs
+   - Assess community support and activity
+   - Review licensing implications
+   - Consider future migration paths
+   - Evaluate learning curve and team expertise
+
+5. Diagrams to include:
+   - Component diagrams
+   - Sequence diagrams for key flows
+   - Data flow diagrams
+   - Deployment architecture
+   - Technology stack diagram
+```
+
+## Using Workflow Rules
+
+To effectively use workflow-specific rules:
+
+### Method 1: Create symbolic links for current work
+
+When switching to a specific workflow, create a symbolic link to make the appropriate rule active:
+
+```bash
+# When starting code review
+ln -sf .cursor/rules/code-review.cursorignore .cursor/rules/active.cursorignore
+
+# When switching to debugging
+ln -sf .cursor/rules/debugging.cursorignore .cursor/rules/active.cursorignore
+```
+
+### Method 2: Mention the workflow in your queries
+
+Explicitly mention the workflow in your queries to Cursor:
+
+- "Help me review this code for security issues"
+- "I'm debugging this function, what could be causing the error?"
+- "Help me document this API endpoint"
+
+### Method 3: Chain with other rules
+
+Include workflow rules alongside your project's technical rules:
+
+```
+# In your react-component.cursorignore
+@file:.cursor/rules/documentation.cursorignore
+
+# Additional React-specific rules
+```
+
+## Benefits of Workflow-Specific Rules
+
+1. **Consistent Approach**: Establish standard practices for common workflows
+2. **Time Saving**: Avoid retyping the same instructions repeatedly
+3. **Quality Improvement**: Ensure thorough handling of each workflow
+4. **Knowledge Sharing**: Encode best practices for the team
+5. **Focused Assistance**: Get more relevant help for your current task
+
+By creating specialized rules for different development workflows, you can significantly enhance your productivity and ensure consistent quality across your development activities. 
