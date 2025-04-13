@@ -1,0 +1,103 @@
+# System Architecture Blueprint
+
+## 🧱 1. High-Level Architecture Overview
+
+```
++-------------------+          +------------------+          +-----------------------+
+|   Voice Interface |  <--->   |  Prioris Core AI  |  <--->   |     API Integrations  |
+|   (Omi device)    |          |  (Brain/Agents)  |          |  (Calendar, Email, etc.)|
++-------------------+          +------------------+          +-----------------------+
+          |                            |                                |
+          v                            v                                v
++-------------------+       +---------------------+         +----------------------+
+|  STT / TTS Engine | <---> |  MCP Server + Memory| <-->     |  Multimodal Models  |
+|  (Omi, Whisper)   |       | (Session, Context)  |         | (Hyperbolic / LLMs)  |
++-------------------+       +---------------------+         +----------------------+
+```
+
+---
+
+## 🧠 2. Core Components (with Roles)
+
+### 🗣️ Voice Layer
+- Omi Wearable: Wake-word detection, speaker, microphone
+- STT Engine (e.g., Whisper, Deepgram): Converts your voice into text
+- TTS Engine (e.g., ElevenLabs, Google): Converts Prioris' replies into voice
+- Wake Word / Toggle System: Lightweight always-on listener on-device
+
+---
+
+### 🧠 Prioris Core AI (Orchestration Engine)
+- Prompt Router + Task Dispatcher: Determines intent (e.g. "Schedule lunch", "Order pizza")
+- Personality Module: Prompt modifier + dynamic system messages
+- Agent Orchestrator:
+  - Background threads
+  - Scheduled agent chains
+  - Parallel tasks with shared memory
+- RLHF Feedback Training Module: Captures user corrections to improve future interactions
+
+---
+
+### 🧩 MCP Server + Context Engine
+- Model Context Protocol (MCP): Handles per-thread context, user memory, task-specific context injection
+- Long-term memory DB: Vector or hybrid store (e.g., Chroma, Weaviate, Postgres hybrid)
+- Session memory: Stored per interaction (ephemeral + optional memory saving)
+
+---
+
+### 🧠 LLM Access & Tools
+- Hyperbolic: Main access point for routing requests to optimal models
+  - Fast, short responses → Claude/Sonar
+  - Long-context summaries → GPT-4/Haiku
+  - Coding → Claude 2.1 or GPT-4
+- Model switcher: Fallback to local LLMs (e.g., Ollama) when offline or private
+
+---
+
+### 🔌 API Integrations (via Plugin Layer)
+- Calendar: Google, Outlook
+- Email: Gmail (OAuth), Outlook
+- Social: X, LinkedIn (via Graph APIs or 3rd party)
+- Messaging: Telegram, Discord, SMS (Twilio)
+- Food/Services: UberEats, Rappi, Amazon
+- Custom: CLI commands, IFTTT, Zapier webhooks
+
+---
+
+### 🔒 Security Layer
+- Encrypted token vault (e.g., HashiCorp Vault, Keyring, or local encrypted store)
+- Auth abstraction for multiple providers (OAuth2, API key headers)
+- Optional MFA fallback, passcode gate, or voiceprint verification
+
+---
+
+## 🔄 3. Data Flow Example
+
+Use Case: "Prioris, schedule lunch with Nani at 1pm tomorrow."
+1. Omi listens → Wake word triggers active listening
+2. Voice input → STT (Whisper) → "schedule lunch with Nani at 1pm tomorrow"
+3. Prioris Core AI:
+   - Detects intent (schedule task)
+   - Uses memory: knows "Nani = Stephanie, wife"
+4. Calls Calendar API: Authenticated call to Google Calendar
+5. Creates event, checks for conflicts, confirms aloud
+6. Text response → TTS (ElevenLabs) → "Done. Lunch with Nani scheduled."
+7. Optional: stores memory of lunch preference for future suggestions
+
+---
+
+## 🧰 4. Suggested Tech Stack
+
+| Component | Recommended Tools |
+| --------- | ----------------- |
+| Voice SDK | Omi SDK, Whisper (STT), ElevenLabs (TTS) |
+| LLMs (API) | Hyperbolic (multi-model), OpenAI, Claude, Ollama (offline fallback) |
+| MCP Server | Self-hosted, deployable with Docker |
+| Memory DB | Chroma, Weaviate, or PostgreSQL Hybrid |
+| Backend API | Node.js, FastAPI, or Next.js API routes |
+| Frontend (Optional) | React + Tailwind or Tauri for local GUI with optional web dashboard |
+| Hosting Model | Hybrid (Self-hosted MCP + memory, managed LLMs) or fully local for high privacy |
+| Auth Layer | OAuth2 (NextAuth / Clerk), Vault |
+| Agent Runtime | LangChain, AutoGen, or custom orchestration |
+| Scheduler / Queue | Celery (Python) or Temporal (JS/Go) |
+| Agent Permissions | Configurable per task — open-ended agents may ask for permission optionally |

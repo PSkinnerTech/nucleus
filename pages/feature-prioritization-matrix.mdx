@@ -1,0 +1,112 @@
+# Feature Prioritization Matrix
+
+Priority	Definition
+🟢 V1 — Must Have	MVP-level features that make Prioris usable and powerful for daily tasks
+🟡 V2 — High Value	Features that build depth and feel but aren't critical for daily function
+🔵 V3 — Stretch Goals	Features that push Prioris into "magical" territory but can be layered in later
+
+---
+
+## 🧠 Prioris Feature Prioritization Matrix
+
+### 🔹 Core Conversation Layer
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Wake word (customizable) | 🟢 V1 | Needed to activate voice-based control |
+| Toggleable always-on mode | 🟢 V1 | Voice toggleable, low-power listening |
+| Two-way voice convo (fast STT/TTS) | 🟢 V1 | Real-time speech ↔ text ↔ speech pipeline |
+| Conversational memory (ephemeral + long-term) | 🟢 V1 | Store + recall tasks, facts, personalities |
+| Parallel query handling | 🟡 V2 | Great UX feature — requires agent/task queueing |
+| Personality toggles | 🟡 V2 | Can be prompt-based to start, UI toggle later |
+
+---
+
+### 📅 Task & Productivity
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Calendar access (read/write) | 🟢 V1 | Google/Apple calendar integration |
+| Schedule meetings / send invites | 🟢 V1 | Use natural language scheduling |
+| Task management integration (Todoist, Notion, etc.) | 🟢 V1 | Start with Todoist or Google Tasks |
+| Set reminders, alarms, timers | 🟢 V1 | Easy wins for immediate utility |
+| Note-taking with tagging | 🟡 V2 | Start with simple markdown, tag later |
+| Meeting summarizer | 🔵 V3 | Requires call monitoring or Meet/Zoom plugin setup |
+
+---
+
+### 📩 Communication & Social
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Email integration (read/summarize/draft/send) | 🟢 V1 | Gmail is easiest starting point |
+| Telegram bot integration | 🟢 V1 | Powerful for real-time interaction, low lift |
+| Social media access (X, LinkedIn, etc.) | 🟡 V2 | Start with posting + reading; auth gets tricky |
+| SMS (via Twilio or native integration) | 🟡 V2 | Twilio or iMessage bridging required |
+| Make/receive calls | 🔵 V3 | Requires VoIP backend or phone bridging |
+| Sit in on calls / transcribe | 🔵 V3 | Advanced — later phase with Whisper + streaming APIs |
+
+---
+
+### 🛒 Errand Running / Services
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Order food (Rappi, UberEats, Domino's) | 🟢 V1 | Use APIs or headless browser fallback |
+| Order items (Amazon, MercadoLibre, etc.) | 🟡 V2 | Requires auth + cart/session handling |
+| Book flights/hotels/cars | 🔵 V3 | Big lift unless using simple travel aggregator APIs |
+| Track packages | 🟡 V2 | Use 3rd-party APIs like AfterShip or carrier APIs |
+
+---
+
+### 🧠 Advanced Intelligence
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Web search + summarization | 🟢 V1 | Use Hyperbolic or SerpAPI, then condense |
+| Deep research (async + memory-based) | 🟡 V2 | Needs multi-threaded querying & summarization |
+| Compare options, give recommendations | 🟡 V2 | Chain of thought reasoning w/ sources |
+| Local file/document ingestion | 🟡 V2 | Easy with PDF parsing, markdown support |
+| Real-time agent chaining | 🔵 V3 | Requires solid agent orchestration layer |
+| Command-line access | 🔵 V3 | Useful, but niche — add if you want full control ops |
+
+---
+
+### 🧩 System Architecture
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| MCP for model context | 🟢 V1 | Core to the app — use for parallel context tracking |
+| Hyperbolic model routing | 🟢 V1 | Start here for model switching + long-context tasks |
+| Local model fallback (e.g., Ollama) | 🟡 V2 | Optional, but good for offline privacy use |
+| Unified logging + feedback | 🟢 V1 | "Why did you say that?" style correction |
+| Plugin/add-on system | 🔵 V3 | Useful long-term for scalability and 3rd-party tools |
+
+---
+
+### 🔐 Security & Privacy
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Encrypted OAuth token management | 🟢 V1 | Absolutely essential |
+| Encrypted local/on-device data store | 🟢 V1 | Especially for calendar, notes, reminders |
+| Voiceprint/MFA fallback | 🔵 V3 | Great stretch for security UX; use passcode at first |
+
+---
+
+### 🧾 Summary Breakdown
+
+| Priority Level | Count of Features |
+| -------------- | ----------------- |
+| 🟢 V1 (Build first) | 20 |
+| 🟡 V2 (High-value additions) | 15 |
+| 🔵 V3 (Stretch goals) | 10 |
+
+---
+
+## Open Questions
+- Yes, we want offline/local fallback.
+- Yes, we will allow it to have as much control as we can allow it to have.
+- Yes, we should include RLHF-style feedback training.
+- Self-hosting vs. Managed Services: What do you recommend?
+- Open-Ended agents should ask for permission optionally. 

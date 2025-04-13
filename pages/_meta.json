@@ -1,5 +1,11 @@
 {
   "index": "Introduction",
+  "feature-prioritization-matrix": "Feature Prioritization Matrix",
+  "system-architecture-blueprint": "System Architecture Blueprint",
+  "core-components": "Core Components",
+  "data-flows": "Data Flows",
+  "recommended-tech-stack": "Recommended Tech Stack",
+  "remaining-questions": "Remaining Questions",
   "another": "Another Page",
   "advanced": "Advanced (A Folder)",
   "about": {

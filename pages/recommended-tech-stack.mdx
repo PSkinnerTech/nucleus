@@ -1,0 +1,71 @@
+# Recommended Tech Stack
+
+## 🧰 Recommended Tech Stack
+
+### 🗣️ Voice Interface Layer
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| Hardware Interface | Omi | Always-on wearable with mic/speaker and wake-word support |
+| STT Engine | Whisper, Deepgram | Transcribe user speech to text |
+| TTS Engine | ElevenLabs, Google TTS | Turn responses into natural speech |
+| Wake Word Engine | Porcupine, custom lightweight listener | Toggle listening and interaction modes via voice |
+
+---
+
+### 🧠 Core AI & Agent Orchestration
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| Agent Framework | LangChain, AutoGen, or custom | Handle multi-agent workflows, parallel tasks |
+| Task Dispatcher | Custom queue logic or Temporal | Route requests to appropriate agents or APIs |
+| RLHF Training | Manual feedback loop → vector db | Learn from user thumbs-up/down or voice correction |
+| Agent Permissions | Custom config per agent | Confirm before executing sensitive commands |
+
+---
+
+### 🧩 Context & Memory (MCP Layer)
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| Session Memory Engine | Custom with Redis or in-memory store | Temporary conversational memory |
+| Long-Term Memory DB | Chroma, Weaviate, or Postgres + pgvector | Persistent semantic memory |
+| Model Context Protocol | Self-hosted MCP server | Thread-safe, multi-agent, multi-task context manager |
+
+---
+
+### 🔌 API Integration Layer
+
+| Integration Domain | Recommended APIs/Tools | Purpose |
+| ------------------ | --------------------- | ------- |
+| Calendar | Google Calendar API, Outlook Calendar API | Event creation, reminders |
+| Email | Gmail API, Microsoft Graph | Read/send/draft messages |
+| To-Do / Notes | Todoist API, Notion API, Markdown files | Task tracking + note-taking |
+| Messaging | Telegram Bot API, Discord API, Twilio | Notifications, reminders, chat |
+| Social | X (Twitter) API, LinkedIn Graph, Threads API | Posting, DMs, scheduling |
+| Errands | UberEats, Amazon, Rappi, AfterShip | Ordering, deliveries, tracking |
+| Automation Tools | IFTTT, Zapier, Home Assistant | Smart home + automation tasks |
+| CLI/Local Scripting | Custom CLI wrapper or Node child_process | Power-user terminal control |
+
+---
+
+### 🧠 LLM Gateway & Model Runtime
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| LLM Routing Layer | Hyperbolic | Switch between Claude, GPT-4, etc. based on task type |
+| Model Fallback (offline) | Ollama (for local model inference) | Use local LLMs (e.g., Mistral, LLaMA) when offline |
+| Model Interfaces | OpenAI, Anthropic, Claude, Gemini | General-purpose and specialized intelligence |
+
+---
+
+### 🖥️ Hosting, UI & DevOps
+
+| Component | Recommended Tools | Purpose |
+| --------- | ----------------- | ------- |
+| API Server | FastAPI (Python) or Next.js (TS) | Serve agent endpoints, handle auth & routing |
+| Frontend GUI | React + Tailwind (web) or Tauri (native) | Optional user dashboard, mobile or desktop interface |
+| Auth Layer | NextAuth.js, Clerk.dev, or Supabase Auth | OAuth2 and user session management |
+| Queue & Scheduler | Celery (Python), Temporal (JS/Go) | Schedule jobs, manage agent chains |
+| Containerization | Docker + Docker Compose | Encapsulate services and dependencies |
+| Self-Hosting | VPS (e.g., Hetzner, Fly.io) or local NUC | Host MCP, memory, agents for maximum control/privacy | 

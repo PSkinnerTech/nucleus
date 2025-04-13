@@ -1,0 +1,57 @@
+# Remaining Questions
+
+## ❓ Remaining Questions / Configurable Options
+
+### 🔌 Hosting & Deployment Strategy
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Should Prioris run fully self-hosted or use managed services for LLMs and APIs? | - Fully self-hosted<br/>- Hybrid (self-hosted context, managed LLMs)<br/>- Fully managed | Self-hosting gives full control and privacy. Hybrid allows faster setup. Fully managed simplifies ops but may limit customization and increase cost. |
+
+---
+
+### 🧠 Agent Autonomy
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Should agents (e.g. email, calendar, purchase) act autonomously or always ask before executing? | - Always ask<br/>- Ask only for sensitive actions<br/>- Fully autonomous (user-defined) | Autonomy increases fluidity but raises risk. Best approach is per-agent permissions with user toggles. |
+
+---
+
+### 🛠️ Voice Control vs. GUI Access
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Will Prioris be fully voice-controlled or also feature a GUI dashboard? | - Voice-only<br/>- Voice + Web Dashboard<br/>- Native mobile/desktop app | Web dashboard is useful for managing settings, reviewing memory, and debugging. Voice-only may suffice for minimal interfaces like wearables. |
+
+---
+
+### 📦 Plugin & Automation System
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Should Prioris support third-party plugins or only allow curated integrations? | - Closed system (only official integrations)<br/>- Curated marketplace<br/>- Open plugin architecture | Open plugins increase extensibility and community growth, but introduce security risks. May require a review/approval mechanism. |
+
+---
+
+### 📚 Memory Retention & Forgetting
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| How long should Prioris remember conversations, facts, and preferences? | - Session only<br/>- Manual save to long-term memory<br/>- Auto-learn mode with manual forget | More memory = better context. But retention must be transparent, editable, and secure. User-facing memory controls are key. |
+
+---
+
+### 🔐 Privacy & Security Preferences
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| What privacy guarantees does Prioris provide by default? | - Local-first data retention<br/>- Fully encrypted logs and tokens<br/>- On-device execution when possible | Transparency and privacy-preserving defaults should be a cornerstone of the assistant's trust model. Voiceprint auth and passcode fallback add layers. |
+
+---
+
+### ⚙️ Model Preference & Runtime Behavior
+
+| Question | Options | Considerations |
+| -------- | ------- | -------------- |
+| Should the user be able to choose which model handles a request? | - Smart auto-routing only<br/>- Manual override per task<br/>- Persistent model preferences | Auto-routing is fast, but some users may want explicit control (e.g., "use Claude for code tasks, GPT-4 for creative writing"). This can also help with cost optimization. | 

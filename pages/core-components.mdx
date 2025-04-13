@@ -1,0 +1,77 @@
+# Core Components
+
+## 🧠 2. Core Components (with Roles)
+
+### 🗣️ Voice Layer
+
+Handles all real-time input/output via audio interfaces.
+- Omi Wearable: Wake-word detection, always-on microphone, and speaker for continuous interaction
+- STT Engine: Converts spoken input to text (e.g., Whisper, Deepgram)
+- TTS Engine: Converts textual responses into natural voice replies (e.g., ElevenLabs, Google TTS)
+- Wake Word / Toggle System: Activates listening mode and toggles always-on functionality via specific voice commands
+
+---
+
+### 🧠 Prioris Core AI (Orchestration Engine)
+
+The brain of Prioris, coordinating tasks, managing context, and driving personality.
+- Prompt Router + Task Dispatcher: Analyzes intent and routes the request to the right sub-agent or API
+- Personality Module: Adjusts tone, language, and behavior of responses based on user-defined settings (e.g., calm, funny, formal)
+- Agent Orchestrator:
+  - Runs background and concurrent agents
+  - Schedules agent chains for multi-step tasks
+  - Shares memory and context between agents
+- RLHF Feedback Trainer: Learns from user feedback ("Yes, that's correct" / "That's wrong") to refine behavior over time
+- Agent Permissions System: Allows or requires approval before autonomous agents execute tasks (e.g., sending emails, booking services)
+
+---
+
+### 🧩 MCP Server + Context Engine
+
+Maintains awareness and history across interactions and sessions.
+- Model Context Protocol (MCP): Tracks conversation threads, goals, and context across multiple agents and sessions
+- Session Memory: Ephemeral, per-session memory for fast context without long-term storage
+- Long-Term Memory Store: Persistent knowledge using vector or hybrid databases (Chroma, Weaviate, or PostgreSQL)
+
+---
+
+### 🧠 LLM Access & Model Tools
+
+Interfaces with large language models and handles smart routing for inference tasks.
+- Hyperbolic: Primary gateway for smart model routing (short/long context, code vs. natural language)
+  - Fast queries → Claude, Sonar
+  - Complex tasks → GPT-4, Claude 2.1, Haiku
+  - Code generation → Claude 2.1, GPT-4
+- Local Model Fallback (e.g., Ollama): Ensures Prioris can function offline or in privacy-concerned contexts
+
+---
+
+### 🔌 API Integration Layer
+
+Provides connectivity to external services and platforms.
+- Calendars: Google Calendar, Outlook
+- Email: Gmail, Outlook APIs (OAuth2 auth)
+- Messaging: Telegram, Discord, SMS (Twilio)
+- Social Media: X (Twitter), LinkedIn, Instagram (via official or third-party APIs)
+- Services & Errands: UberEats, Rappi, Amazon, flight/hotel APIs
+- Automation Bridges: IFTTT, Zapier, CLI scripting, Home Assistant
+
+---
+
+### 🔒 Security & Identity Layer
+
+Ensures privacy, secure access, and proper identity verification.
+- Token Vault: Secure storage of API credentials (e.g., HashiCorp Vault, Keyring)
+- Auth Abstraction: OAuth2 for third-party logins, session handling
+- Fallback Authentication: Voiceprint ID or manual PIN/passphrase
+- Local Data Encryption: Protects session and memory data stored on-device
+
+---
+
+### 🖥️ Hosting & Interface Layer
+
+Defines where Prioris lives and how you interact with it.
+- Hybrid Hosting Model: Self-hosted MCP/memory + optionally managed LLMs (or fully local/offline mode)
+- Frontend Interface (optional): Web dashboard (React + Tailwind) or desktop/native GUI via Tauri
+
+--- 
