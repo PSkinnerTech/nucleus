@@ -29,7 +29,7 @@ export default function V0Index() {
   // Return a loading state while redirecting
   return (
     <div>
-      <h1>Prioris V0</h1>
+      <h1>Rin V0</h1>
       <p>Redirecting to V0 Roadmap...</p>
     </div>
   );

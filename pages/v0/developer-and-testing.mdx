@@ -4,7 +4,7 @@ navOrder: 2
 ---
 # Step 1: Developer & Testing Tools Setup
 
-This guide provides a step-by-step approach to building the foundational developer tools for Prioris V0.
+This guide provides a step-by-step approach to building the foundational developer tools for Rin V0.
 
 ## Prerequisites
 
@@ -32,8 +32,8 @@ Once you have all the prerequisites set up, you can proceed with the following s
 
 ### 1. Create Basic Project Structure
 ```bash
-mkdir -p prioris-cli/src
-cd prioris-cli
+mkdir -p rin-cli/src
+cd rin-cli
 npm init -y
 npm install commander dotenv axios openai sqlite3
 touch .env src/index.js src/storage.js
@@ -67,25 +67,25 @@ const ttsClient = new textToSpeech.TextToSpeechClient();
 storage.init();
 
 program
-  .name('prioris')
-  .description('Prioris CLI - Personal Assistant Prototype')
+  .name('rin')
+  .description('Rin CLI - Personal Assistant Prototype')
   .version('0.0.1');
 
 program
   .command('ask <query>')
-  .description('Ask Prioris a question')
+  .description('Ask Rin a question')
   .action(async (query) => {
     try {
       const response = await openai.createChatCompletion({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'You are Prioris, a helpful personal assistant.' },
+          { role: 'system', content: 'You are Rin, a helpful personal assistant.' },
           { role: 'user', content: query }
         ],
       });
       
       const answer = response.data.choices[0].message.content;
-      console.log(`Prioris: ${answer}`);
+      console.log(`Rin: ${answer}`);
       
       // Store interaction in memory
       storage.saveInteraction(query, answer);
@@ -108,7 +108,7 @@ program
     interactions.forEach((item, i) => {
       console.log(`\n--- Interaction ${i+1} ---`);
       console.log(`You: ${item.query}`);
-      console.log(`Prioris: ${item.response}`);
+      console.log(`Rin: ${item.response}`);
     });
   });
 
@@ -145,12 +145,12 @@ const path = require('path');
 const fs = require('fs');
 
 // Ensure data directory exists
-const dataDir = path.join(process.env.HOME || process.env.USERPROFILE, '.prioris');
+const dataDir = path.join(process.env.HOME || process.env.USERPROFILE, '.rin');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir);
 }
 
-const dbPath = path.join(dataDir, 'prioris.db');
+const dbPath = path.join(dataDir, 'rin.db');
 let db;
 
 function init() {
@@ -208,7 +208,7 @@ module.exports = { init, saveInteraction, getInteractions };
     "start": "node src/index.js"
   },
   "bin": {
-    "prioris": "./src/index.js"
+    "rin": "./src/index.js"
   }
 }
 ```
@@ -226,11 +226,11 @@ npm link
 Once set up, you can use the CLI:
 
 ```bash
-# Ask Prioris a question
-prioris ask "What's the weather today?"
+# Ask Rin a question
+rin ask "What's the weather today?"
 
 # View interaction history
-prioris remember
+rin remember
 ```
 
 This basic CLI and storage implementation provides the foundation for testing the core functionality before implementing more complex features.

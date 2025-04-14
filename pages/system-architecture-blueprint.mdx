@@ -4,7 +4,7 @@
 
 ```
 +-------------------+          +------------------+          +-----------------------+
-|   Voice Interface |  <--->   |  Prioris Core AI  |  <--->   |     API Integrations  |
+|   Voice Interface |  <--->   |  Rin Core AI     |  <--->   |     API Integrations  |
 |   (Omi device)    |          |  (Brain/Agents)  |          |  (Calendar, Email, etc.)|
 +-------------------+          +------------------+          +-----------------------+
           |                            |                                |
@@ -22,12 +22,12 @@
 ### 🗣️ Voice Layer
 - Omi Wearable: Wake-word detection, speaker, microphone
 - STT Engine (e.g., Whisper, Deepgram): Converts your voice into text
-- TTS Engine (e.g., ElevenLabs, Google): Converts Prioris' replies into voice
+- TTS Engine (e.g., ElevenLabs, Google): Converts Rin's replies into voice
 - Wake Word / Toggle System: Lightweight always-on listener on-device
 
 ---
 
-### 🧠 Prioris Core AI (Orchestration Engine)
+### 🧠 Rin Core AI (Orchestration Engine)
 - Prompt Router + Task Dispatcher: Determines intent (e.g. "Schedule lunch", "Order pizza")
 - Personality Module: Prompt modifier + dynamic system messages
 - Agent Orchestrator:
@@ -73,10 +73,10 @@
 
 ## 🔄 3. Data Flow Example
 
-Use Case: "Prioris, schedule lunch with Nani at 1pm tomorrow."
+Use Case: "Rin, schedule lunch with Nani at 1pm tomorrow."
 1. Omi listens → Wake word triggers active listening
 2. Voice input → STT (Whisper) → "schedule lunch with Nani at 1pm tomorrow"
-3. Prioris Core AI:
+3. Rin Core AI:
    - Detects intent (schedule task)
    - Uses memory: knows "Nani = Stephanie, wife"
 4. Calls Calendar API: Authenticated call to Google Calendar

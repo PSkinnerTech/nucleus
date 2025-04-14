@@ -4,7 +4,7 @@
 
 ```
 +------------------+         +------------------+          +------------------------+         +-----------------------+
-|   Omi Device     |  --->   |  STT Engine      |  --->    |  Prioris Core AI       |  --->   |  Calendar Integration |
+|   Omi Device     |  --->   |  STT Engine      |  --->    |  Rin Core AI           |  --->   |  Calendar Integration |
 | (Wake Word Mic)  |         | (Whisper/Deepgram)|         | (Intent + Context)     |         | (Google/Outlook API)  |
 +------------------+         +------------------+          +------------------------+         +-----------------------+
                                 |                                |                                |
@@ -24,11 +24,11 @@
 
 ### ✅ Example 1: Schedule an Event
 
-Command: "Prioris, schedule lunch with Nani at 1pm tomorrow."
+Command: "Rin, schedule lunch with Nani at 1pm tomorrow."
 
 ```mermaid
 sequenceDiagram
-    User->>Omi Device: "Prioris, schedule lunch..."
+    User->>Omi Device: "Rin, schedule lunch..."
     Omi Device->>STT Engine: Voice input
     STT Engine->>Core AI: Transcribed text
     Core AI->>Memory: Check "Nani" reference
@@ -59,7 +59,7 @@ sequenceDiagram
 
 ### ✅ Example 2: Order Food
 
-Command: "Prioris, order two pepperoni pizzas from Domino's."
+Command: "Rin, order two pepperoni pizzas from Domino's."
 
 ```mermaid
 flowchart TD
@@ -90,7 +90,7 @@ flowchart TD
 
 ### ✅ Example 3: Deep Research Task
 
-Command: "Prioris, compare the health benefits of intermittent fasting and keto."
+Command: "Rin, compare the health benefits of intermittent fasting and keto."
 
 ```mermaid
 graph TD
@@ -120,23 +120,23 @@ graph TD
 
 ---
 
-### ✅ Example 4: Correcting Prioris (RLHF Feedback)
+### ✅ Example 4: Correcting Rin (RLHF Feedback)
 
 Command: "That's not what I meant — cancel the last email."
 
 ```mermaid
 sequenceDiagram
-    User->>Prioris: "That's not what I meant..."
-    Prioris->>Task Manager: Interrupt current task
+    User->>Rin: "That's not what I meant..."
+    Rin->>Task Manager: Interrupt current task
     Task Manager->>Email Agent: Rollback email draft
     Email Agent->>Task Manager: Action canceled
-    Prioris->>RLHF System: Log negative feedback
+    Rin->>RLHF System: Log negative feedback
     RLHF System->>Behavior Model: Update pattern matching
-    Prioris->>User: "Got it. Email canceled."
+    Rin->>User: "Got it. Email canceled."
 ```
 
 1. Wake word triggers interrupt path mid-task.
-2. Prioris rolls back the latest email draft action.
+2. Rin rolls back the latest email draft action.
 3. Logs the correction as negative feedback.
 4. Adjusts its future pattern matching (e.g., avoids sending before confirming recipients).
 5. You hear: "Got it. Email canceled. I'll ask before sending next time."
@@ -145,7 +145,7 @@ sequenceDiagram
 
 ### ✅ Example 5: Offline Use
 
-Command: "Prioris, create a shopping list and remind me at 5."
+Command: "Rin, create a shopping list and remind me at 5."
 
 ```mermaid
 flowchart LR
@@ -160,8 +160,8 @@ flowchart LR
     I --> J[Voice Reminder]
 ```
 
-1. Prioris is offline (e.g., no internet).
+1. Rin is offline (e.g., no internet).
 2. Wake word still works — STT runs locally via Whisper.
 3. Command is parsed using Ollama's local LLM fallback.
 4. Task saved to local memory DB with timestamped reminder.
-5. At 5:00, Prioris triggers reminder and reads back the shopping list aloud. 
+5. At 5:00, Rin triggers reminder and reads back the shopping list aloud. 

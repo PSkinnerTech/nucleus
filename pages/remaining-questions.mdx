@@ -6,7 +6,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| Should Prioris run fully self-hosted or use managed services for LLMs and APIs? | - Fully self-hosted<br/>- Hybrid (self-hosted context, managed LLMs)<br/>- Fully managed | Self-hosting gives full control and privacy. Hybrid allows faster setup. Fully managed simplifies ops but may limit customization and increase cost. |
+| Should Rin run fully self-hosted or use managed services for LLMs and APIs? | - Fully self-hosted<br/>- Hybrid (self-hosted context, managed LLMs)<br/>- Fully managed | Self-hosting gives full control and privacy. Hybrid allows faster setup. Fully managed simplifies ops but may limit customization and increase cost. |
 
 **Answer:** For prioritizing fast, high-quality responses and reliable connectivity, the **Hybrid approach** is optimal. Self-host the MCP Server and Memory components for privacy and control over personal data, while using managed LLM services (like OpenAI, Anthropic) for superior model performance and API reliability. This provides the best balance between response quality, speed, and uptime without requiring the massive infrastructure needed for self-hosting cutting-edge LLMs.
 
@@ -26,7 +26,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| Will Prioris be fully voice-controlled or also feature a GUI dashboard? | - Voice-only<br/>- Voice + Web Dashboard<br/>- Native mobile/desktop app | Web dashboard is useful for managing settings, reviewing memory, and debugging. Voice-only may suffice for minimal interfaces like wearables. |
+| Will Rin be fully voice-controlled or also feature a GUI dashboard? | - Voice-only<br/>- Voice + Web Dashboard<br/>- Native mobile/desktop app | Web dashboard is useful for managing settings, reviewing memory, and debugging. Voice-only may suffice for minimal interfaces like wearables. |
 
 **Answer:** The optimal choice is **Voice + Web Dashboard**. Voice control provides seamless, hands-free interaction ideal for quick tasks and wearable devices. A complementary web dashboard significantly enhances usability by allowing users to manage settings, review and edit memory, debug interactions, and handle complex tasks more efficiently. This hybrid approach ensures accessibility, flexibility, and ease of use across various scenarios and user preferences.
 
@@ -36,7 +36,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| Should Prioris support third-party plugins or only allow curated integrations? | - Closed system (only official integrations)<br/>- Curated marketplace<br/>- Open plugin architecture | Open plugins increase extensibility and community growth, but introduce security risks. May require a review/approval mechanism. |
+| Should Rin support third-party plugins or only allow curated integrations? | - Closed system (only official integrations)<br/>- Curated marketplace<br/>- Open plugin architecture | Open plugins increase extensibility and community growth, but introduce security risks. May require a review/approval mechanism. |
 
 **Answer:** The best approach is a **Curated marketplace**. This strikes a balance between extensibility, security, and quality control. Allowing third-party developers to contribute plugins fosters community growth and innovation, while a curated review and approval process ensures security, reliability, and a consistent user experience. Over time, this approach can evolve into a more open architecture as robust security and review mechanisms mature.
 
@@ -46,7 +46,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| How long should Prioris remember conversations, facts, and preferences? | - Session only<br/>- Manual save to long-term memory<br/>- Auto-learn mode with manual forget | More memory = better context. But retention must be transparent, editable, and secure. User-facing memory controls are key. |
+| How long should Rin remember conversations, facts, and preferences? | - Session only<br/>- Manual save to long-term memory<br/>- Auto-learn mode with manual forget | More memory = better context. But retention must be transparent, editable, and secure. User-facing memory controls are key. |
 
 **Answer:** The optimal choice is **Auto-learn mode with manual forget**. This approach maximizes context-awareness and personalization by automatically retaining useful information, while still empowering users with clear, transparent, and easy-to-use controls to review, edit, or delete stored memories. Providing intuitive memory management tools ensures user trust, privacy, and control over their data.
 
@@ -56,7 +56,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| What privacy guarantees does Prioris provide by default? | - Local-first data retention<br/>- Fully encrypted logs and tokens<br/>- On-device execution when possible | Transparency and privacy-preserving defaults should be a cornerstone of the assistant's trust model. Voiceprint auth and passcode fallback add layers. |
+| What privacy guarantees does Rin provide by default? | - Local-first data retention<br/>- Fully encrypted logs and tokens<br/>- On-device execution when possible | Transparency and privacy-preserving defaults should be a cornerstone of the assistant's trust model. Voiceprint auth and passcode fallback add layers. |
 
 **Answer:** The recommended default is a combination of **Local-first data retention**, **Fully encrypted logs and tokens**, and **On-device execution when possible**. This comprehensive approach ensures maximum privacy and security, building user trust from the outset. Prioritize local data handling and encryption, and clearly communicate these privacy measures to users. Additionally, implement optional voiceprint authentication and passcode fallback mechanisms to further enhance security and user confidence.
 
@@ -76,7 +76,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| Should Prioris support multiple languages and localization from the start, or initially focus on a single language? | - Single language initially<br/>- Multi-language support from start<br/>- Single language with future expansion | Multi-language support broadens accessibility but adds complexity in STT/TTS engines, model selection, and localization of responses. |
+| Should Rin support multiple languages and localization from the start, or initially focus on a single language? | - Single language initially<br/>- Multi-language support from start<br/>- Single language with future expansion | Multi-language support broadens accessibility but adds complexity in STT/TTS engines, model selection, and localization of responses. |
 
 ---
 
@@ -84,7 +84,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| Should Prioris include built-in analytics and usage insights for users? | - No analytics<br/>- Basic usage analytics (opt-in)<br/>- Detailed analytics dashboard | Analytics help users optimize interactions but must respect privacy, transparency, and user consent. |
+| Should Rin include built-in analytics and usage insights for users? | - No analytics<br/>- Basic usage analytics (opt-in)<br/>- Detailed analytics dashboard | Analytics help users optimize interactions but must respect privacy, transparency, and user consent. |
 
 ---
 
@@ -92,7 +92,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| How should Prioris handle data backups and portability? | - No backups<br/>- Manual export/import<br/>- Automatic encrypted backups | Secure and easy data portability enhances trust and flexibility, especially important for long-term adoption. |
+| How should Rin handle data backups and portability? | - No backups<br/>- Manual export/import<br/>- Automatic encrypted backups | Secure and easy data portability enhances trust and flexibility, especially important for long-term adoption. |
 
 ---
 
@@ -100,7 +100,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| Should Prioris support multi-user scenarios or collaborative tasks? | - Single-user only<br/>- Basic multi-user support<br/>- Advanced collaboration features | Multi-user support enhances utility in family or team contexts but introduces complexity around permissions, privacy, and data management. |
+| Should Rin support multi-user scenarios or collaborative tasks? | - Single-user only<br/>- Basic multi-user support<br/>- Advanced collaboration features | Multi-user support enhances utility in family or team contexts but introduces complexity around permissions, privacy, and data management. |
 
 ---
 
@@ -108,7 +108,7 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| How customizable should Prioris be in terms of personality, response style, and interaction patterns? | - Minimal customization<br/>- Moderate customization (preset personalities)<br/>- Deep customization (fully user-defined) | Deep customization enhances user satisfaction but requires careful design to avoid overwhelming users. |
+| How customizable should Rin be in terms of personality, response style, and interaction patterns? | - Minimal customization<br/>- Moderate customization (preset personalities)<br/>- Deep customization (fully user-defined) | Deep customization enhances user satisfaction but requires careful design to avoid overwhelming users. |
 
 ---
 
@@ -116,6 +116,6 @@
 
 | Question | Options | Considerations |
 | -------- | ------- | -------------- |
-| Should Prioris provide a consistent experience across all platforms (wearables, mobile, desktop, web)? | - Platform-specific optimizations<br/>- Consistent cross-platform experience<br/>- Hybrid (core consistency with platform-specific enhancements) | Consistency improves user experience but may limit platform-specific optimizations. |
+| Should Rin provide a consistent experience across all platforms (wearables, mobile, desktop, web)? | - Platform-specific optimizations<br/>- Consistent cross-platform experience<br/>- Hybrid (core consistency with platform-specific enhancements) | Consistency improves user experience but may limit platform-specific optimizations. |
 
 --- 

@@ -3,9 +3,9 @@ title: "V0 Step 1: Developer & Testing Rules"
 navOrder: 1
 ---
 
-# Prioris V0 Step 1: Developer & Testing Rules
+# Rin V0 Step 1: Developer & Testing Rules
 
-This page contains all the Cursor rules you need to implement the Developer & Testing Tools for Prioris V0 as outlined in the [Step 1: Developer and Testing](/v0/developer-and-testing) guide.
+This page contains all the Cursor rules you need to implement the Developer & Testing Tools for Rin V0 as outlined in the [Step 1: Developer and Testing](/v0/developer-and-testing) guide.
 
 ## Setting Up Cursor Rules
 
@@ -22,7 +22,7 @@ For example, to set up the Project Setup rule:
 ```bash
 # Copy the Project Setup rule content
 # Create the rule file
-touch .cursor/rules/prioris-v0-step1-setup.cursorignore
+touch .cursor/rules/Rin-v0-step1-setup.cursorignore
 # Paste the rule content into the file
 ```
 
@@ -30,13 +30,13 @@ touch .cursor/rules/prioris-v0-step1-setup.cursorignore
 
 ## Project Setup Rule
 
-This rule helps you with the initial project setup for the Prioris V0 CLI tool.
+This rule helps you with the initial project setup for the Rin V0 CLI tool.
 
 <details>
 <summary>**Click to see the complete Project Setup rule**</summary>
 
 ```
-# Prioris V0 Project Setup Rule
+# Rin V0 Project Setup Rule
 # This rule helps with setting up the initial project structure and dependencies
 
 # Define which files this rule applies to
@@ -48,11 +48,11 @@ package-lock.json
 .env
 
 # Rule content below
-When helping with the Prioris V0 Step 1 project setup:
+When helping with the Rin V0 Step 1 project setup:
 
 1. Project Structure Guidelines:
    - Follow the specified directory structure:
-     - prioris-cli/
+     - Rin-cli/
        - src/
          - index.js (CLI entry point)
          - storage.js (Database operations)
@@ -111,8 +111,8 @@ When helping with the Prioris V0 Step 1 project setup:
 <summary>**Directory Structure & Setup Commands**</summary>
 
 ```bash
-mkdir -p prioris-cli/src
-cd prioris-cli
+mkdir -p Rin-cli/src
+cd Rin-cli
 npm init -y
 npm install commander dotenv axios openai sqlite3 @google-cloud/text-to-speech
 touch .env src/index.js src/storage.js
@@ -136,15 +136,15 @@ GOOGLE_CLOUD_CREDENTIALS=/path/to/your/google-credentials.json
 
 ```json
 {
-  "name": "prioris-cli",
+  "name": "Rin-cli",
   "version": "0.0.1",
-  "description": "Prioris CLI - Personal Assistant Prototype",
+  "description": "Rin CLI - Personal Assistant Prototype",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js"
   },
   "bin": {
-    "prioris": "./src/index.js"
+    "Rin": "./src/index.js"
   },
   "keywords": ["cli", "assistant", "ai"],
   "author": "Your Name",
@@ -164,13 +164,13 @@ GOOGLE_CLOUD_CREDENTIALS=/path/to/your/google-credentials.json
 
 ## CLI Development Rule
 
-This rule helps you build the CLI interface for the Prioris V0 prototype using Commander.js.
+This rule helps you build the CLI interface for the Rin V0 prototype using Commander.js.
 
 <details>
 <summary>**Click to see the complete CLI Development rule**</summary>
 
 ```
-# Prioris V0 CLI Development Rule
+# Rin V0 CLI Development Rule
 # This rule helps with implementing the CLI interface using Commander.js
 
 # Define which files this rule applies to
@@ -180,15 +180,15 @@ src/cli.js
 src/commands/*.js
 
 # Include setup rule for context
-@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+@file:.cursor/rules/Rin-v0-step1-setup.cursorignore
 
 # Rule content below
-When helping with the Prioris V0 CLI implementation:
+When helping with the Rin V0 CLI implementation:
 
 1. CLI Structure Guidelines:
    - Use Commander.js for command line parsing and execution
    - Implement the following commands:
-     - ask: For asking Prioris a question
+     - ask: For asking Rin a question
      - remember: For viewing past interactions
      - speak: For text-to-speech conversion
    - Keep the CLI entry point clean and modular
@@ -273,26 +273,26 @@ const ttsClient = new textToSpeech.TextToSpeechClient();
 storage.init();
 
 program
-  .name('prioris')
-  .description('Prioris CLI - Personal Assistant Prototype')
+  .name('Rin')
+  .description('Rin CLI - Personal Assistant Prototype')
   .version('0.0.1');
 
 program
   .command('ask <query>')
-  .description('Ask Prioris a question')
+  .description('Ask Rin a question')
   .action(async (query) => {
     try {
       console.log('Thinking...');
       const response = await openai.createChatCompletion({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'You are Prioris, a helpful personal assistant.' },
+          { role: 'system', content: 'You are Rin, a helpful personal assistant.' },
           { role: 'user', content: query }
         ],
       });
       
       const answer = response.data.choices[0].message.content;
-      console.log(`Prioris: ${answer}`);
+      console.log(`Rin: ${answer}`);
       
       // Store interaction in memory
       await storage.saveInteraction(query, answer);
@@ -319,7 +319,7 @@ program
       interactions.forEach((item, i) => {
         console.log(`\n--- Interaction ${i+1} ---`);
         console.log(`You: ${item.query}`);
-        console.log(`Prioris: ${item.response}`);
+        console.log(`Rin: ${item.response}`);
         console.log(`Time: ${new Date(item.timestamp).toLocaleString()}`);
       });
     } catch (error) {
@@ -361,13 +361,13 @@ program.parse();
 
 ## Storage Implementation Rule
 
-This rule helps you implement the SQLite-based storage system for the Prioris V0 prototype.
+This rule helps you implement the SQLite-based storage system for the Rin V0 prototype.
 
 <details>
 <summary>**Click to see the complete Storage Implementation rule**</summary>
 
 ```
-# Prioris V0 Storage Implementation Rule
+# Rin V0 Storage Implementation Rule
 # This rule helps with implementing the SQLite-based storage system
 
 # Define which files this rule applies to
@@ -377,14 +377,14 @@ src/db/*.js
 src/models/*.js
 
 # Include setup rule for context
-@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+@file:.cursor/rules/Rin-v0-step1-setup.cursorignore
 
 # Rule content below
-When helping with the Prioris V0 storage implementation:
+When helping with the Rin V0 storage implementation:
 
 1. SQLite Setup:
    - Use sqlite3 package for database operations
-   - Create a database in a user-specific location (~/.prioris/ folder)
+   - Create a database in a user-specific location (~/.Rin/ folder)
    - Initialize database and tables on startup
    - Use proper serialization for operations
    - Implement connection pooling or singleton pattern
@@ -444,12 +444,12 @@ const path = require('path');
 const fs = require('fs');
 
 // Ensure data directory exists
-const dataDir = path.join(process.env.HOME || process.env.USERPROFILE, '.prioris');
+const dataDir = path.join(process.env.HOME || process.env.USERPROFILE, '.Rin');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir);
 }
 
-const dbPath = path.join(dataDir, 'prioris.db');
+const dbPath = path.join(dataDir, 'Rin.db');
 let db;
 
 /**
@@ -594,13 +594,13 @@ module.exports = {
 
 ## API Integration Rule
 
-This rule helps you implement API integrations for the Prioris V0 prototype, focusing on OpenAI and Google Cloud Text-to-Speech.
+This rule helps you implement API integrations for the Rin V0 prototype, focusing on OpenAI and Google Cloud Text-to-Speech.
 
 <details>
 <summary>**Click to see the complete API Integration rule**</summary>
 
 ```
-# Prioris V0 API Integration Rule
+# Rin V0 API Integration Rule
 # This rule helps with integrating external APIs
 
 # Define which files this rule applies to
@@ -610,17 +610,17 @@ src/api/*.js
 src/services/*.js
 
 # Include setup rule for context
-@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+@file:.cursor/rules/Rin-v0-step1-setup.cursorignore
 
 # Rule content below
-When helping with the Prioris V0 API integrations:
+When helping with the Rin V0 API integrations:
 
 1. OpenAI Integration:
    - Use the official openai npm package
    - Set up a proper Configuration with API key from environment variables
    - Use the ChatCompletion API for conversations
    - Set a reasonable model (gpt-4 or gpt-3.5-turbo)
-   - Create a consistent system prompt for Prioris
+   - Create a consistent system prompt for Rin
    - Handle API responses correctly
    - Extract the message content from responses
    - Set appropriate parameters (temperature, max_tokens, etc.)
@@ -681,8 +681,8 @@ When helping with the Prioris V0 API integrations:
 // src/services/openai-service.js
 const { Configuration, OpenAIApi } = require('openai');
 
-// Default system prompt for Prioris
-const DEFAULT_SYSTEM_PROMPT = 'You are Prioris, a helpful personal assistant. Provide concise, accurate, and helpful responses.';
+// Default system prompt for Rin
+const DEFAULT_SYSTEM_PROMPT = 'You are Rin, a helpful personal assistant. Provide concise, accurate, and helpful responses.';
 
 class OpenAIService {
   constructor(apiKey, options = {}) {
@@ -916,13 +916,13 @@ module.exports = TTSService;
 
 ## Testing and Debugging Rule
 
-This rule helps you test and debug the Prioris V0 prototype to ensure it works correctly before moving on to later development stages.
+This rule helps you test and debug the Rin V0 prototype to ensure it works correctly before moving on to later development stages.
 
 <details>
 <summary>**Click to see the complete Testing and Debugging rule**</summary>
 
 ```
-# Prioris V0 Testing and Debugging Rule
+# Rin V0 Testing and Debugging Rule
 # This rule helps with testing and debugging the CLI application
 
 # Define which files this rule applies to
@@ -934,10 +934,10 @@ test/*.js
 __tests__/*.js
 
 # Include setup rule for context
-@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+@file:.cursor/rules/Rin-v0-step1-setup.cursorignore
 
 # Rule content below
-When helping with testing and debugging the Prioris V0 CLI:
+When helping with testing and debugging the Rin V0 CLI:
 
 1. Manual Testing Approach:
    - Test each command individually with various inputs
@@ -1013,22 +1013,22 @@ const path = require('path');
 const tests = [
   {
     name: 'Help command',
-    cmd: 'prioris --help',
-    expectedInOutput: 'Usage: prioris'
+    cmd: 'Rin --help',
+    expectedInOutput: 'Usage: Rin'
   },
   {
     name: 'Ask command',
-    cmd: 'prioris ask "What is the capital of France?"',
+    cmd: 'Rin ask "What is the capital of France?"',
     expectedInOutput: 'Paris'
   },
   {
     name: 'Remember command',
-    cmd: 'prioris remember',
+    cmd: 'Rin remember',
     expectedInOutput: 'Interaction'
   },
   {
     name: 'Speak command',
-    cmd: 'prioris speak "Hello world" -o test-output.mp3',
+    cmd: 'Rin speak "Hello world" -o test-output.mp3',
     expectedInOutput: 'Audio content written to',
     cleanup: () => {
       if (fs.existsSync('test-output.mp3')) {
@@ -1040,7 +1040,7 @@ const tests = [
 ];
 
 // Run tests
-console.log('Running Prioris CLI tests...\n');
+console.log('Running Rin CLI tests...\n');
 
 let passed = 0;
 let failed = 0;
@@ -1086,7 +1086,7 @@ process.exit(failed > 0 ? 1 : 0);
 ## How to Use These Rules
 
 1. **Copy the rule content**: Click on the dropdown for the specific rule you need
-2. **Create a file**: In your project, create a file at <code>.cursor/rules/prioris-v0-step1-[component].cursorignore</code>
+2. **Create a file**: In your project, create a file at <code>.cursor/rules/Rin-v0-step1-[component].cursorignore</code>
 3. **Paste the rule**: Paste the copied content into the file
 4. **Start developing**: As you work on the component, Cursor will provide guidance based on the rule
 
@@ -1094,7 +1094,7 @@ You can also chain rules together using the <code>@file</code> reference system:
 
 ```
 # In other rules, include the setup rule for context
-@file:.cursor/rules/prioris-v0-step1-setup.cursorignore
+@file:.cursor/rules/Rin-v0-step1-setup.cursorignore
 
 # Additional rule content below
 ```
