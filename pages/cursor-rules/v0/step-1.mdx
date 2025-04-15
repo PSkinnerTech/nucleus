@@ -30,7 +30,7 @@ touch .cursor/rules/Rin-v0-step1-setup.cursorignore
 
 ## Project Setup Rule
 
-This rule helps you with the initial project setup for the Rin V0 CLI tool.
+This rule helps you with the initial project setup for the Rin V0 prototype, a Python-based voice-first AI assistant.
 
 <details>
 <summary>**Click to see the complete Project Setup rule**</summary>
@@ -40,11 +40,11 @@ This rule helps you with the initial project setup for the Rin V0 CLI tool.
 # This rule helps with setting up the initial project structure and dependencies
 
 # Define which files this rule applies to
-*.js
-*.json
+*.py
 *.env
-package.json
-package-lock.json
+setup.py
+pyproject.toml
+requirements.txt
 .env
 
 # Rule content below
@@ -52,55 +52,80 @@ When helping with the Rin V0 Step 1 project setup:
 
 1. Project Structure Guidelines:
    - Follow the specified directory structure:
-     - Rin-cli/
-       - src/
-         - index.js (CLI entry point)
-         - storage.js (Database operations)
+     - rin-cli/
+       - rin/
+         - __init__.py
+         - cli.py (CLI entry point)
+         - core.py (Core application logic)
+         - llm.py (Language model integration)
+         - tts.py (Text-to-speech capabilities)
+         - stt.py (Speech-to-text capabilities)
+         - audio.py (Audio input/output handling)
+         - storage.py (Local memory)
+         - config.py (Configuration management)
+         - logging_config.py (Logging setup)
        - .env (Environment variables)
-       - package.json (Project configuration)
-   - Keep the structure simple and flat for this prototype
+       - setup.py (Python package setup)
+   - Create necessary directories in user's home:
+     - ~/.rin/logs (Logging directory)
+     - ~/.rin/audio (Audio output storage)
 
 2. Package Setup:
-   - Use npm for package management
+   - Use pip and venv for package management
    - Required dependencies:
-     - commander: For CLI interface
-     - dotenv: For environment variable management
-     - axios: For HTTP requests
+     - click: For CLI interface
+     - python-dotenv: For environment variable management
      - openai: For OpenAI API integration
-     - sqlite3: For local storage
-     - @google-cloud/text-to-speech: For TTS functionality
+     - google-cloud-texttospeech: For TTS functionality
+     - whisper: For speech-to-text capabilities
+     - sounddevice: For cross-platform audio I/O
+     - pydub: For audio file processing
+     - sqlite-utils: For simple SQLite operations
+     - asyncio: For asynchronous processing
+     - aiohttp: For async HTTP requests
+     - numpy: For audio processing
 
 3. Environment Configuration:
    - Store API keys and credentials in .env file
    - Required environment variables:
      - OPENAI_API_KEY: For OpenAI interaction
-     - GOOGLE_CLOUD_CREDENTIALS: Path to Google Cloud credentials file
+     - GOOGLE_APPLICATION_CREDENTIALS: Path to Google Cloud credentials file
+     - TTS_ENGINE: Text-to-speech engine choice (google, coqui)
+     - STT_ENGINE: Speech-to-text engine choice (whisper, google)
+     - LOG_LEVEL: Logging verbosity
    - Never hardcode sensitive information in code files
    - Add .env to .gitignore to prevent committing secrets
 
 4. Initialization Process:
+   - Create a config module for centralized configuration management
+   - Implement proper logging with separate loggers per module
    - Use proper error handling when initializing services
-   - Validate environment variables are present before using them
-   - Provide clear console messages during initialization
-   - Use async initialization where appropriate
+   - Use asynchronous initialization for non-blocking operations
+   - Validate environment variables before using them
+   - Separate core app logic from interface concerns
+   - Use factory pattern for service implementations
 
 5. Basic Setup Commands:
-   - Recommend proper npm commands for installation and setup
-   - Ensure proper file permissions are set
-   - Include shebang line in the main CLI file
-   - Use npm link for development testing
+   - Use proper virtual environment creation and activation
+   - Recommend proper pip commands for installation
+   - Set up development mode installation with pip -e
+   - Include setup.py with entry points for CLI commands
+   - Support cross-platform installation
 
-6. Project Metadata:
-   - Set appropriate name, version, and description in package.json
-   - Configure bin field for CLI executable
-   - Set appropriate license and author information
-   - Add start script to package.json
+6. Code Organization:
+   - Use a modular approach with separation of concerns
+   - Create abstract base classes for service interfaces
+   - Implement proper error handling and logging
+   - Use asynchronous programming for responsive UX
+   - Implement cross-platform audio handling
+   - Create factory methods for component creation
 
 7. Code Style:
-   - Use consistent naming conventions (camelCase)
-   - Add proper JSDoc comments for functions
-   - Use const for values that don't change
-   - Separate configuration and implementation
+   - Use consistent naming conventions (snake_case for Python)
+   - Add proper docstrings for modules, classes and functions
+   - Use type hints where appropriate
+   - Create proper abstraction layers
+   - Follow PEP 8 guidelines for Python code
 ```
 
 </details>
@@ -111,11 +136,22 @@ When helping with the Rin V0 Step 1 project setup:
 <summary>**Directory Structure & Setup Commands**</summary>
 
 ```bash
-mkdir -p Rin-cli/src
-cd Rin-cli
-npm init -y
-npm install commander dotenv axios openai sqlite3 @google-cloud/text-to-speech
-touch .env src/index.js src/storage.js
+mkdir -p rin-cli/rin
+cd rin-cli
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+pip install -U pip
+pip install click python-dotenv openai google-cloud-texttospeech sqlite-utils \
+  sounddevice numpy whisper pydub asyncio aiohttp 
+
+# Create module files
+touch rin/__init__.py rin/cli.py rin/core.py rin/llm.py rin/tts.py rin/stt.py 
+touch rin/audio.py rin/storage.py rin/config.py rin/logging_config.py
+touch setup.py
+
+# Create data directories
+mkdir -p ~/.rin/logs ~/.rin/audio
 ```
 
 </details>
@@ -126,56 +162,62 @@ touch .env src/index.js src/storage.js
 ```
 # .env
 OPENAI_API_KEY=your_openai_key
-GOOGLE_CLOUD_CREDENTIALS=/path/to/your/google-credentials.json
+GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-credentials.json
+AUDIO_OUTPUT_DIR=~/.rin/audio
+TTS_ENGINE=google  # Options: google, coqui (when implemented)
+STT_ENGINE=whisper  # Options: whisper, google (when implemented)
+LOG_LEVEL=INFO
 ```
 
 </details>
 
 <details>
-<summary>**package.json Configuration**</summary>
+<summary>**setup.py Configuration**</summary>
 
-```json
-{
-  "name": "Rin-cli",
-  "version": "0.0.1",
-  "description": "Rin CLI - Personal Assistant Prototype",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node src/index.js"
-  },
-  "bin": {
-    "Rin": "./src/index.js"
-  },
-  "keywords": ["cli", "assistant", "ai"],
-  "author": "Your Name",
-  "license": "MIT",
-  "dependencies": {
-    "commander": "^x.x.x",
-    "dotenv": "^x.x.x",
-    "axios": "^x.x.x",
-    "openai": "^x.x.x", 
-    "sqlite3": "^x.x.x",
-    "@google-cloud/text-to-speech": "^x.x.x"
-  }
-}
+```python
+from setuptools import setup, find_packages
+
+setup(
+    name='rin-cli',
+    version='0.1.0',
+    packages=find_packages(),
+    install_requires=[
+        'click',
+        'openai',
+        'python-dotenv',
+        'google-cloud-texttospeech',
+        'sounddevice',
+        'numpy',
+        'whisper',
+        'pydub',
+        'asyncio',
+        'aiohttp',
+        'sqlite-utils'
+    ],
+    entry_points='''
+        [console_scripts]
+        rin=rin.cli:cli
+    ''',
+)
 ```
 
 </details>
 
 ## CLI Development Rule
 
-This rule helps you build the CLI interface for the Rin V0 prototype using Click.
+This rule helps you build the CLI interface for the Rin V0 prototype using Click and asyncio.
 
 <details>
 <summary>**Click to see the complete CLI Development rule**</summary>
 
 ```
 # Rin V0 CLI Development Rule
-# This rule helps with implementing the CLI interface using Click
+# This rule helps with implementing the CLI interface using Click and asyncio
 
 # Define which files this rule applies to
 *.py
 rin/cli.py
+rin/core.py
 rin/commands/*.py
 
 # Include setup rule for context
@@ -187,37 +229,49 @@ When helping with the Rin V0 CLI implementation:
 1. CLI Structure Guidelines:
    - Use Click for command line parsing and execution
    - Implement the following commands:
-     - ask: For asking Rin a question
+     - ask: For asking Rin a question via text
+     - listen: For recording speech and responding
      - remember: For viewing past interactions
      - speak: For text-to-speech conversion
    - Keep the CLI entry point clean and modular
+   - Use asyncio.run() to handle async operations
    - Add proper descriptions for each command
-   - Include version information from package
+   - Create a separate core layer for business logic
 
 2. Command Implementation:
    - Each command should have:
      - A clear description
      - Proper argument and option handling
-     - Good error handling
+     - Good error handling with try/except
      - Clear user feedback
+     - Async support for non-blocking operations
    - For the 'ask' command:
-     - Send query to OpenAI API
+     - Send query to LLM client
      - Display the response
+     - Properly handle errors and timeouts
      - Store interaction in local storage
+   - For the 'listen' command:
+     - Record audio using sounddevice
+     - Transcribe using Whisper STT
+     - Process the transcribed query
+     - Optionally play back the response
    - For the 'remember' command:
      - Retrieve past interactions from storage
      - Display them in a readable format
      - Support pagination if many records exist
    - For the 'speak' command:
-     - Convert text to speech using Google Cloud TTS
-     - Save audio to file
-     - Provide output confirmation
+     - Convert text to speech using TTS engine
+     - Save audio to file in user directory
+     - Play the audio through system speakers
+     - Support voice/language options
 
 3. Error Handling:
    - Use try/except blocks for error handling
    - Provide useful error messages
-   - Check for missing credentials
+   - Check for missing API credentials
    - Validate command inputs
+   - Handle audio device errors gracefully
+   - Add proper logging and error reporting
    - Use custom exceptions for specific error cases
 
 4. User Experience:
@@ -226,13 +280,17 @@ When helping with the Rin V0 CLI implementation:
    - Format output for better readability
    - Set reasonable default values
    - Add help text and examples
+   - Consider accessibility for visually impaired users
+   - Support different output formats
 
 5. Code Organization:
-   - Use Python classes to structure commands
-   - Separate concerns (API calls, command logic, output formatting)
-   - Use proper function naming (action verbs for functions)
+   - Separate core logic from CLI presentation layer
+   - Use dependency injection for services
    - Keep functions focused and small
-   - Initialize required services before command execution
+   - Use async/await for non-blocking operations
+   - Initialize required services centrally
+   - Use factory patterns for component creation
+   - Support modular extension for future features
 
 6. CLI Entry Point:
    - Use click.group() for command grouping
@@ -240,6 +298,8 @@ When helping with the Rin V0 CLI implementation:
    - Load environment variables early
    - Provide global help and version information
    - Handle keyboard interrupts gracefully
+   - Set up logging early in the process
+   - Initialize components using factory methods
 ```
 
 </details>
@@ -251,23 +311,15 @@ When helping with the Rin V0 CLI implementation:
 
 ```python
 # rin/cli.py
-import os
 import click
-from dotenv import load_dotenv
-from pathlib import Path
-import json
+import asyncio
+import logging
+from rin.core import Assistant
+from rin.audio import AudioHandler
+from rin.logging_config import loggers
 
-from rin.storage import Storage
-from rin.llm import OpenAIClient
-from rin.tts import TextToSpeech
-
-# Load environment variables
-load_dotenv()
-
-# Initialize components
-storage = Storage()
-llm_client = OpenAIClient()
-tts_client = TextToSpeech()
+logger = loggers['core']
+assistant = Assistant()
 
 @click.group()
 def cli():
@@ -279,57 +331,45 @@ def cli():
 def ask(query):
     """Ask Rin a question"""
     try:
-        click.echo("Thinking...")
-        # Get response from LLM
-        response = llm_client.generate_response(query)
-        click.echo(f"Rin: {response}")
-        
-        # Store interaction in memory
-        storage.save_interaction(query, response)
+        response = asyncio.run(assistant.process_query(query))
+        click.echo(f"Rin: {response['text']}")
     except Exception as e:
         click.echo(f"Error: {str(e)}")
 
 @cli.command()
-@click.option('--limit', '-l', default=10, help='Number of interactions to show')
-def remember(limit):
-    """Show past interactions"""
+@click.option('--voice/--no-voice', default=True, help="Enable/disable voice response")
+def listen(voice):
+    """Listen for voice command and respond"""
     try:
-        interactions = storage.get_interactions(limit)
-        if not interactions:
-            click.echo("No past interactions found.")
-            return
+        result = asyncio.run(assistant.listen_and_respond())
+        click.echo(f"You said: {result.get('query', '')}")
+        click.echo(f"Rin: {result.get('text', '')}")
         
-        click.echo("Past interactions:")
-        for i, item in enumerate(interactions):
-            click.echo(f"\n--- Interaction {i+1} ---")
-            click.echo(f"You: {item['query']}")
-            click.echo(f"Rin: {item['response']}")
-            click.echo(f"Time: {item['timestamp']}")
+        if voice and result.get('audio_path'):
+            asyncio.run(AudioHandler.play_audio(result['audio_path']))
     except Exception as e:
-        click.echo(f"Error retrieving interactions: {str(e)}")
+        click.echo(f"Error: {str(e)}")
+
+@cli.command()
+def remember():
+    """Show saved interactions"""
+    try:
+        interactions = asyncio.run(assistant.get_interaction_history())
+        for i, item in enumerate(interactions):
+            click.echo(f"[{i+1}] You: {item['query']}\nRin: {item['response']}\n")
+    except Exception as e:
+        click.echo(f"Error: {str(e)}")
 
 @cli.command()
 @click.argument('text')
-@click.option('--output', '-o', default='output.mp3', help='Output filename')
-@click.option('--language', '-l', default='en-US', help='Language code')
-@click.option('--gender', '-g', default='NEUTRAL', 
-              type=click.Choice(['MALE', 'FEMALE', 'NEUTRAL']), 
-              help='Voice gender')
-def speak(text, output, language, gender):
-    """Convert text to speech using Google Cloud TTS"""
+def speak(text):
+    """Convert text to speech"""
     try:
-        click.echo("Converting text to speech...")
-        tts_client.synthesize_speech(
-            text, 
-            output_file=output,
-            options={
-                'language_code': language,
-                'gender': gender
-            }
-        )
-        click.echo(f"Audio content written to: {output}")
+        path = asyncio.run(assistant.tts.synthesize(text))
+        click.echo(f"Audio saved to {path}")
+        asyncio.run(AudioHandler.play_audio(path))
     except Exception as e:
-        click.echo(f"Error with text-to-speech: {str(e)}")
+        click.echo(f"Error: {str(e)}")
 
 if __name__ == '__main__':
     cli()
@@ -337,16 +377,84 @@ if __name__ == '__main__':
 
 </details>
 
+<details>
+<summary>**Core Assistant Logic (rin/core.py)**</summary>
+
+```python
+# rin/core.py
+import asyncio
+import logging
+from rin.llm import LLMInterface
+from rin.tts import TTSInterface
+from rin.stt import STTInterface
+from rin.storage import Storage
+from rin.config import TTS_ENGINE, STT_ENGINE
+from rin.logging_config import loggers
+
+logger = loggers['core']
+
+class Assistant:
+    """Core assistant logic, separate from UI/CLI concerns"""
+    
+    def __init__(self):
+        self.storage = Storage()
+        self.llm = LLMInterface.create()
+        self.tts = TTSInterface.create(TTS_ENGINE)
+        self.stt = STTInterface.create(STT_ENGINE)
+        logger.info("Assistant initialized with TTS: %s, STT: %s", TTS_ENGINE, STT_ENGINE)
+    
+    async def process_query(self, query, respond_with_voice=False):
+        """Process a text query and return response"""
+        try:
+            logger.info("Processing query: %s", query)
+            response = await self.llm.generate_response(query)
+            await self.storage.save_interaction(query, response)
+            
+            audio_path = None
+            if respond_with_voice:
+                audio_path = await self.tts.synthesize(response)
+                
+            return {
+                "text": response,
+                "audio_path": audio_path
+            }
+        except Exception as e:
+            logger.error("Error processing query: %s", str(e), exc_info=True)
+            return {
+                "error": str(e),
+                "text": "I encountered an error while processing your request."
+            }
+    
+    async def listen_and_respond(self):
+        """Record from microphone, convert to text, and respond"""
+        try:
+            logger.info("Listening for speech input")
+            query = await self.stt.transcribe_from_mic()
+            if not query:
+                return {"error": "Could not understand audio"}
+                
+            return await self.process_query(query, respond_with_voice=True)
+        except Exception as e:
+            logger.error("Error in listen and respond: %s", str(e), exc_info=True)
+            return {"error": str(e)}
+    
+    async def get_interaction_history(self, limit=10):
+        """Retrieve conversation history"""
+        return await self.storage.get_interactions(limit)
+```
+
+</details>
+
 ## Storage Implementation Rule
 
-This rule helps you implement the SQLite-based storage system for the Rin V0 prototype.
+This rule helps you implement the async SQLite-based storage system for the Rin V0 prototype.
 
 <details>
 <summary>**Click to see the complete Storage Implementation rule**</summary>
 
 ```
 # Rin V0 Storage Implementation Rule
-# This rule helps with implementing the SQLite-based storage system
+# This rule helps with implementing the SQLite-based storage system with async support
 
 # Define which files this rule applies to
 *.py
@@ -363,6 +471,8 @@ When helping with the Rin V0 storage implementation:
 1. SQLite Setup:
    - Use Python's built-in sqlite3 module for database operations
    - Create a database in a user-specific location (~/.rin/ folder)
+   - Make database operations non-blocking with asyncio
+   - Run SQLite operations in executor to avoid blocking main thread
    - Initialize database and tables in the class constructor
    - Use connections and cursors properly
    - Use context managers or proper cleanup for connections
@@ -376,22 +486,28 @@ When helping with the Rin V0 storage implementation:
    - Use appropriate data types for columns
    - Add indexes for frequently queried fields
    - Use TEXT DEFAULT CURRENT_TIMESTAMP for timestamps in SQLite
+   - Plan schema for future extensions
 
-3. Storage API Design:
+3. Async Storage API Design:
    - Implement a Storage class with the following methods:
      - __init__(): Initialize the database connection
-     - init_db(): Create necessary tables and indexes
-     - save_interaction(query, response): Store a new interaction
-     - get_interactions(limit): Retrieve recent interactions
+     - _init_db(): Create necessary tables and indexes (sync)
+     - async save_interaction(query, response): Store a new interaction
+     - async get_interactions(limit): Retrieve recent interactions
    - Use parameterized queries for security
    - Implement proper error handling with exceptions
+   - Implement private synchronous methods to run in executor
+   - Wrap synchronous calls in loop.run_in_executor()
 
-4. Error Handling:
+4. Error Handling and Logging:
    - Use try/except blocks for database operations
-   - Close connections properly in the __del__ method
+   - Close connections properly
    - Add rollback for transactions
    - Use specific exception types for different errors
    - Provide helpful error messages
+   - Log errors, warnings, and info messages
+   - Include error context in logs
+   - Return meaningful error responses
 
 5. Data Management:
    - Implement data cleanup for old records
@@ -399,13 +515,17 @@ When helping with the Rin V0 storage implementation:
    - Add proper validation before storing data
    - Return data as dictionaries for easier use
    - Consider data migration strategy for future schema changes
+   - Support pagination for large result sets
+   - Add support for searching and filtering
 
 6. Performance Considerations:
    - Use proper indexing for query performance
    - Keep connections open when appropriate
    - Close connections when done
    - Use executemany for batch operations
-   - Use connection pooling for concurrent access
+   - Run database operations in separate thread via executor
+   - Structure code to minimize blocking operations
+   - Add connection timeouts
 ```
 
 </details>
@@ -418,144 +538,146 @@ When helping with the Rin V0 storage implementation:
 ```python
 # rin/storage.py
 import sqlite3
-import os
-import json
+import asyncio
+import logging
 from pathlib import Path
-from datetime import datetime
+from rin.config import RIN_DIR
+from rin.logging_config import loggers
+
+logger = loggers['storage']
 
 class Storage:
+    """Database storage with async support"""
+    
     def __init__(self):
-        # Create data directory in user's home if it doesn't exist
-        data_dir = Path.home() / ".rin"
-        data_dir.mkdir(exist_ok=True)
-        
-        # Set up the database
-        self.db_path = data_dir / "rin.db"
-        self.conn = sqlite3.connect(str(self.db_path))
-        self.init_db()
-        
-        print(f"Local memory initialized at {self.db_path}")
+        self.path = RIN_DIR / "rin.db"
+        # Initialize synchronously
+        self._init_db()
+        logger.info(f"Storage initialized at {self.path}")
     
-    def init_db(self):
-        """Initialize the database tables and indexes"""
-        cursor = self.conn.cursor()
-        
-        # Create interactions table if it doesn't exist
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS interactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                query TEXT NOT NULL,
-                response TEXT NOT NULL,
-                timestamp TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Create index on timestamp for faster queries
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_interactions_timestamp 
-            ON interactions(timestamp DESC)
-        ''')
-        
-        self.conn.commit()
+    def _init_db(self):
+        """Initialize database schema"""
+        conn = sqlite3.connect(self.path)
+        conn.execute('''CREATE TABLE IF NOT EXISTS interactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            query TEXT,
+            response TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )''')
+        conn.commit()
+        conn.close()
     
-    def save_interaction(self, query, response):
-        """Store an interaction in the database
-        
-        Args:
-            query (str): The user's question
-            response (str): The assistant's response
-            
-        Returns:
-            int: The ID of the inserted record
-        """
+    async def save_interaction(self, query, response):
+        """Save interaction to database asynchronously"""
         try:
-            cursor = self.conn.cursor()
-            cursor.execute(
-                "INSERT INTO interactions (query, response) VALUES (?, ?)",
-                (query, response)
+            logger.debug(f"Saving interaction: Q: {query[:50]}... R: {response[:50]}...")
+            
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None,
+                self._save_interaction_sync,
+                query,
+                response
             )
-            self.conn.commit()
-            return cursor.lastrowid
-        except sqlite3.Error as e:
-            self.conn.rollback()
-            raise Exception(f"Database error: {str(e)}")
+            return True
+        except Exception as e:
+            logger.error(f"Error saving interaction: {str(e)}", exc_info=True)
+            return False
     
-    def get_interactions(self, limit=10):
-        """Retrieve recent interactions from the database
-        
-        Args:
-            limit (int): Maximum number of interactions to retrieve
-            
-        Returns:
-            list: List of interaction dictionaries
-        """
+    def _save_interaction_sync(self, query, response):
+        """Synchronous database save (to be run in executor)"""
+        conn = sqlite3.connect(self.path)
+        conn.execute(
+            "INSERT INTO interactions (query, response) VALUES (?, ?)", 
+            (query, response)
+        )
+        conn.commit()
+        conn.close()
+    
+    async def get_interactions(self, limit=10):
+        """Get recent interactions asynchronously"""
         try:
-            cursor = self.conn.cursor()
-            cursor.execute(
-                "SELECT id, query, response, timestamp FROM interactions ORDER BY timestamp DESC LIMIT ?",
-                (limit,)
+            logger.debug(f"Retrieving {limit} recent interactions")
+            
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                self._get_interactions_sync,
+                limit
             )
-            rows = cursor.fetchall()
-            
-            # Convert to list of dictionaries
-            interactions = []
-            for row in rows:
-                interactions.append({
-                    "id": row[0],
-                    "query": row[1],
-                    "response": row[2],
-                    "timestamp": row[3]
-                })
-            
-            return interactions
-        except sqlite3.Error as e:
-            raise Exception(f"Database error: {str(e)}")
+            return result
+        except Exception as e:
+            logger.error(f"Error getting interactions: {str(e)}", exc_info=True)
+            return []
     
-    def cleanup_old_interactions(self, days=30):
-        """Remove interactions older than specified days
-        
-        Args:
-            days (int): Number of days to keep
-            
-        Returns:
-            int: Number of records deleted
-        """
+    def _get_interactions_sync(self, limit):
+        """Synchronous database query (to be run in executor)"""
+        conn = sqlite3.connect(self.path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT query, response FROM interactions ORDER BY timestamp DESC LIMIT ?", 
+            (limit,)
+        )
+        result = [dict(query=row[0], response=row[1]) for row in cursor.fetchall()]
+        conn.close()
+        return result
+    
+    async def cleanup_old_interactions(self, days=30):
+        """Remove interactions older than specified days"""
         try:
-            cursor = self.conn.cursor()
+            logger.info(f"Cleaning up interactions older than {days} days")
+            loop = asyncio.get_event_loop()
+            deleted_count = await loop.run_in_executor(
+                None,
+                self._cleanup_old_interactions_sync,
+                days
+            )
+            logger.info(f"Deleted {deleted_count} old interactions")
+            return deleted_count
+        except Exception as e:
+            logger.error(f"Error cleaning up old interactions: {str(e)}", exc_info=True)
+            return 0
+    
+    def _cleanup_old_interactions_sync(self, days):
+        """Synchronous database cleanup (to be run in executor)"""
+        conn = sqlite3.connect(self.path)
+        try:
+            cursor = conn.cursor()
             cursor.execute(
                 "DELETE FROM interactions WHERE datetime(timestamp) < datetime('now', ?)",
                 (f'-{days} days',)
             )
-            self.conn.commit()
-            return cursor.rowcount
+            conn.commit()
+            deleted_count = cursor.rowcount
+            return deleted_count
         except sqlite3.Error as e:
-            self.conn.rollback()
-            raise Exception(f"Database error: {str(e)}")
-    
-    def __del__(self):
-        """Ensure database connection is closed when the object is destroyed"""
-        if hasattr(self, 'conn'):
-            self.conn.close()
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
 ```
 
 </details>
 
 ## API Integration Rule
 
-This rule helps you implement API integrations for the Rin V0 prototype, focusing on OpenAI and Google Cloud Text-to-Speech.
+This rule helps you implement API integrations for the Rin V0 prototype, focusing on OpenAI LLM, TTS, and STT services with async support.
 
 <details>
 <summary>**Click to see the complete API Integration rule**</summary>
 
 ```
 # Rin V0 API Integration Rule
-# This rule helps with integrating external APIs
+# This rule helps with integrating external APIs with async support
 
 # Define which files this rule applies to
 *.py
-rin/*.py
-rin/api/*.py
-rin/services/*.py
+rin/llm.py
+rin/tts.py
+rin/stt.py
+rin/audio.py
 
 # Include setup rule for context
 @file:.cursor/rules/Rin-v0-step1-setup.cursorignore
@@ -563,197 +685,151 @@ rin/services/*.py
 # Rule content below
 When helping with the Rin V0 API integrations:
 
-1. OpenAI Integration:
+1. LLM Integration (OpenAI):
    - Use the official openai Python package
-   - Set up the API key from environment variables
+   - Create an abstract LLMInterface class for future model flexibility
+   - Implement factory pattern via static create() method
+   - Set up the API key from environment variables or config
    - Use the ChatCompletion API for conversations
-   - Set a reasonable model (gpt-4 or gpt-3.5-turbo)
+   - Set reasonable model (gpt-4 or gpt-3.5-turbo) from config
    - Create a consistent system prompt for Rin
-   - Handle API responses correctly
+   - Make API calls asynchronous with asyncio.run_in_executor
    - Extract the message content from responses
-   - Set appropriate parameters (temperature, max_tokens, etc.)
-   - Implement proper error handling for API limits
+   - Set appropriate parameters (temperature, max_tokens)
+   - Handle API rate limits and implement retries
+   - Use proper error handling and logging
 
-2. Google Cloud TTS Integration:
+2. Text-to-Speech (TTS) Integration:
+   - Create an abstract TTSInterface class with factory pattern
+   - Implement Google Cloud TTS as primary engine
+   - Plan for Coqui TTS as offline alternative
    - Use the google-cloud-texttospeech package
    - Set up authentication using credentials file path
-   - Choose appropriate voice settings
-   - Support multiple languages
-   - Select good default audio settings
-   - Save audio output to a file
-   - Properly handle audio binary data
-   - Implement audio format options
+   - Choose appropriate voice settings via configuration
+   - Support multiple languages and voice options
+   - Implement audio format options (MP3, WAV)
+   - Make API calls asynchronous with asyncio.run_in_executor
+   - Save audio output to configurable directory
+   - Generate unique filenames for audio files
+   - Implement proper error handling and logging
 
-3. API Error Handling:
-   - Use try/except blocks for error handling
-   - Handle network errors
-   - Handle rate limiting errors
-   - Implement exponential backoff for retries
+3. Speech-to-Text (STT) Integration:
+   - Create an abstract STTInterface class with factory pattern
+   - Implement Whisper for local speech recognition
+   - Plan for Google Speech-to-Text as alternative
+   - Use OpenAI's whisper library for transcription
+   - Load models asynchronously to avoid blocking startup
+   - Support different model sizes via configuration
+   - Implement transcribe_audio() method for file input
+   - Implement transcribe_from_mic() for microphone input
+   - Handle different languages and accents
+   - Make API calls asynchronous with asyncio.run_in_executor
+   - Implement proper error handling and logging
+
+4. Audio Management:
+   - Create AudioHandler class for common audio operations
+   - Use sounddevice for cross-platform audio recording
+   - Use pydub for cross-platform audio playback
+   - Support configurable recording parameters
+   - Implement audio file format conversion if needed
+   - Create asynchronous methods for recording and playback
+   - Handle audio device errors gracefully
+   - Support different sample rates and audio formats
+   - Implement timeouts and error recovery
+   - Use proper error handling and logging
+
+5. API Error Handling:
+   - Create clear error hierarchy with specific exceptions
+   - Implement retries with exponential backoff
+   - Handle network errors and timeouts
+   - Process service-specific errors appropriately
+   - Log errors with context for debugging
    - Provide clear error messages to users
-   - Log errors for debugging
    - Handle authentication errors
    - Validate inputs before sending to APIs
+   - Implement graceful degradation for offline use
 
-4. API Security:
+6. API Security and Architecture:
    - Never hardcode API keys in source code
-   - Use environment variables for credentials
-   - Keep credentials file secure
-   - Set appropriate permissions for output files
+   - Use environment variables or secure configuration
+   - Set appropriate permissions for credential files
    - Validate and sanitize user input
    - Use HTTPS for all API connections
    - Follow principle of least privilege
-
-5. API Architecture:
-   - Create abstraction layers for APIs as Python classes
-   - Implement service objects for API calls
-   - Separate concerns between APIs and business logic
+   - Create abstraction layers via abstract base classes
+   - Use dependency injection for testing
    - Make API services easily swappable
    - Implement caching where appropriate
-   - Use dependency injection for testing
-
-6. Performance Considerations:
-   - Implement request timeouts
-   - Handle concurrent requests appropriately
-   - Consider streaming responses for long outputs
-   - Optimize request payload sizes
-   - Implement connection pooling when applicable
 ```
 
 </details>
 
-### Implementation Example
+### Implementation Examples
 
 <details>
-<summary>**OpenAI Service (rin/llm.py)**</summary>
+<summary>**LLM Service (rin/llm.py)**</summary>
 
 ```python
 # rin/llm.py
 import os
-import time
 import openai
-from typing import Optional, Dict, Any, List
+import asyncio
+import logging
+from abc import ABC, abstractmethod
+from rin.config import OPENAI_API_KEY, LLM_MODEL, SYSTEM_PROMPT
+from rin.logging_config import loggers
 
-# Default system prompt for Rin
-DEFAULT_SYSTEM_PROMPT = "You are Rin, a helpful personal assistant. Provide concise, accurate, and helpful responses."
+logger = loggers['llm']
 
-class OpenAIClient:
-    def __init__(self, api_key: Optional[str] = None, options: Optional[Dict[str, Any]] = None):
-        """Initialize the OpenAI client
-        
-        Args:
-            api_key: Optional API key (defaults to environment variable)
-            options: Configuration options
-        """
-        # Use provided API key or get from environment
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable.")
-        
-        # Set API key for OpenAI library
-        openai.api_key = self.api_key
-        
-        # Set default options
-        self.options = {
-            "model": "gpt-4",
-            "temperature": 0.7,
-            "max_tokens": 500,
-            "system_prompt": DEFAULT_SYSTEM_PROMPT,
-            "timeout": 30,  # 30 seconds timeout
-            "max_retries": 3
-        }
-        
-        # Update with user options if provided
-        if options:
-            self.options.update(options)
+class LLMInterface(ABC):
+    """Abstract base class for LLM providers"""
     
-    def generate_response(self, query: str) -> str:
-        """Generate a response from OpenAI models
-        
-        Args:
-            query: The user's question
+    @staticmethod
+    def create(provider="openai"):
+        """Factory method to create appropriate LLM client"""
+        if provider == "openai":
+            return OpenAIClient()
+        # Add more providers here as needed
+        else:
+            raise ValueError(f"Unknown LLM provider: {provider}")
+    
+    @abstractmethod
+    async def generate_response(self, query):
+        """Generate a response to the given query"""
+        pass
+
+class OpenAIClient(LLMInterface):
+    def __init__(self):
+        openai.api_key = OPENAI_API_KEY
+        self.model = LLM_MODEL
+        logger.info(f"Initialized OpenAI client with model {self.model}")
+    
+    async def generate_response(self, query):
+        """Asynchronously generate a response using OpenAI"""
+        try:
+            logger.info(f"Generating response for query using {self.model}")
             
-        Returns:
-            The generated response text
-        """
-        retry_count = 0
-        backoff_time = 1  # Start with 1 second backoff
-        
-        while retry_count <= self.options["max_retries"]:
-            try:
-                # Create the chat completion
-                response = openai.ChatCompletion.create(
-                    model=self.options["model"],
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: openai.ChatCompletion.create(
+                    model=self.model,
                     messages=[
-                        {"role": "system", "content": self.options["system_prompt"]},
+                        {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": query}
                     ],
-                    temperature=self.options["temperature"],
-                    max_tokens=self.options["max_tokens"],
-                    timeout=self.options["timeout"]
+                    temperature=0.7,
+                    max_tokens=500
                 )
-                
-                # Extract and return the message content
-                if response.choices and len(response.choices) > 0:
-                    return response.choices[0].message.content.strip()
-                else:
-                    raise Exception("Unexpected empty response from OpenAI API")
-                    
-            except openai.error.RateLimitError:
-                # Handle rate limiting with exponential backoff
-                if retry_count < self.options["max_retries"]:
-                    print(f"Rate limit exceeded. Retrying in {backoff_time} seconds...")
-                    time.sleep(backoff_time)
-                    backoff_time *= 2  # Exponential backoff
-                    retry_count += 1
-                else:
-                    raise Exception("Rate limit exceeded. Maximum retries reached.")
-                    
-            except openai.error.APIError as e:
-                # Handle API errors
-                if self._is_retryable_error(e) and retry_count < self.options["max_retries"]:
-                    print(f"API error: {str(e)}. Retrying in {backoff_time} seconds...")
-                    time.sleep(backoff_time)
-                    backoff_time *= 2
-                    retry_count += 1
-                else:
-                    raise Exception(f"OpenAI API error: {str(e)}")
-                    
-            except openai.error.AuthenticationError:
-                # No retry for auth errors
-                raise Exception("Authentication error: Invalid OpenAI API key")
-                
-            except openai.error.Timeout:
-                # Handle timeout errors
-                if retry_count < self.options["max_retries"]:
-                    print(f"Request timed out. Retrying in {backoff_time} seconds...")
-                    time.sleep(backoff_time)
-                    backoff_time *= 2
-                    retry_count += 1
-                else:
-                    raise Exception("Request timed out. Maximum retries reached.")
-                    
-            except Exception as e:
-                # Handle unexpected errors
-                raise Exception(f"Error calling OpenAI API: {str(e)}")
-    
-    def _is_retryable_error(self, error) -> bool:
-        """Determine if an error should trigger a retry
-        
-        Args:
-            error: The error to check
+            )
             
-        Returns:
-            True if the error is retryable, False otherwise
-        """
-        # Server errors are retryable
-        if hasattr(error, 'http_status'):
-            return error.http_status >= 500
-            
-        # Network errors are retryable
-        if isinstance(error, (openai.error.APIConnectionError, openai.error.ServiceUnavailableError)):
-            return True
-            
-        return False
+            content = response.choices[0].message.content
+            logger.debug(f"Generated response: {content[:50]}...")
+            return content
+        except Exception as e:
+            logger.error(f"Error generating response: {str(e)}", exc_info=True)
+            raise
 ```
 
 </details>
@@ -764,136 +840,235 @@ class OpenAIClient:
 ```python
 # rin/tts.py
 import os
-from typing import Dict, Any, Optional
+import time
+import asyncio
+import logging
+from abc import ABC, abstractmethod
+from pathlib import Path
 from google.cloud import texttospeech
+from rin.config import AUDIO_DIR, GOOGLE_CREDENTIALS
+from rin.logging_config import loggers
 
-class TextToSpeech:
-    def __init__(self, credentials_path: Optional[str] = None):
-        """Initialize the Text-to-Speech client
-        
-        Args:
-            credentials_path: Optional path to credentials JSON file
-        """
-        # Set credentials path if provided
-        if credentials_path:
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
-            
-        # Check for credentials
-        if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-            raise ValueError("Google Cloud credentials not found. Set GOOGLE_APPLICATION_CREDENTIALS environment variable.")
-        
-        # Initialize the client
-        try:
-            self.client = texttospeech.TextToSpeechClient()
-        except Exception as e:
-            raise Exception(f"Failed to initialize Text-to-Speech client: {str(e)}")
+logger = loggers['tts']
+
+class TTSInterface(ABC):
+    """Abstract base class for TTS engines"""
     
-    def synthesize_speech(self, text: str, output_file: str = "output.mp3", options: Optional[Dict[str, Any]] = None) -> str:
-        """Convert text to speech and save to a file
-        
-        Args:
-            text: The text to convert to speech
-            output_file: Path to save the audio file
-            options: Voice and audio options
-            
-        Returns:
-            The path to the output file
-        """
-        # Set default options
-        voice_options = {
-            "language_code": "en-US",
-            "gender": "NEUTRAL",
-            "voice_name": None
-        }
-        
-        audio_options = {
-            "audio_encoding": "MP3",
-            "pitch": 0,
-            "speaking_rate": 1.0
-        }
-        
-        # Update with user options if provided
-        if options:
-            if "language_code" in options:
-                voice_options["language_code"] = options["language_code"]
-            if "gender" in options:
-                voice_options["gender"] = options["gender"]
-            if "voice_name" in options:
-                voice_options["voice_name"] = options["voice_name"]
-            if "audio_encoding" in options:
-                audio_options["audio_encoding"] = options["audio_encoding"]
-            if "pitch" in options:
-                audio_options["pitch"] = options["pitch"]
-            if "speaking_rate" in options:
-                audio_options["speaking_rate"] = options["speaking_rate"]
-        
+    @staticmethod
+    def create(engine="google"):
+        """Factory method to create appropriate TTS engine"""
+        if engine == "google":
+            return GoogleTTS()
+        elif engine == "coqui":
+            # Placeholder for future implementation
+            raise NotImplementedError("Coqui TTS not yet implemented")
+        else:
+            raise ValueError(f"Unknown TTS engine: {engine}")
+    
+    @abstractmethod
+    async def synthesize(self, text):
+        """Convert text to speech and return audio file path"""
+        pass
+
+class GoogleTTS(TTSInterface):
+    def __init__(self):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_CREDENTIALS
+        self.client = texttospeech.TextToSpeechClient()
+        logger.info("Initialized Google TTS client")
+    
+    async def synthesize(self, text):
+        """Asynchronously synthesize text to speech using Google Cloud"""
         try:
-            # Set up the text input
-            synthesis_input = texttospeech.SynthesisInput(text=text)
+            logger.info(f"Synthesizing text: {text[:50]}...")
             
-            # Build the voice request
-            voice = texttospeech.VoiceSelectionParams(
-                language_code=voice_options["language_code"],
-                ssml_gender=getattr(texttospeech.SsmlVoiceGender, voice_options["gender"]),
-                name=voice_options["voice_name"]
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self._synthesize_sync(text)
             )
             
-            # Select the audio format
-            audio_config = texttospeech.AudioConfig(
-                audio_encoding=getattr(texttospeech.AudioEncoding, audio_options["audio_encoding"]),
-                pitch=audio_options["pitch"],
-                speaking_rate=audio_options["speaking_rate"]
-            )
+            # Generate unique filename
+            timestamp = int(time.time())
+            output_file = AUDIO_DIR / f"rin_tts_{timestamp}.mp3"
             
-            # Perform the synthesis
-            response = self.client.synthesize_speech(
-                input=synthesis_input,
-                voice=voice,
-                audio_config=audio_config
-            )
-            
-            # Write the audio content to file
+            # Save audio content
             with open(output_file, "wb") as out:
                 out.write(response.audio_content)
                 
-            return output_file
-            
+            logger.info(f"Audio saved to {output_file}")
+            return str(output_file)
         except Exception as e:
-            raise Exception(f"Error synthesizing speech: {str(e)}")
+            logger.error(f"Error synthesizing speech: {str(e)}", exc_info=True)
+            raise
     
-    def list_voices(self, language_code: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Get available voices
+    def _synthesize_sync(self, text):
+        """Synchronous Google TTS call (to be run in executor)"""
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="en-US", 
+            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3
+        )
         
-        Args:
-            language_code: Optional language code to filter voices
-            
-        Returns:
-            List of available voices
-        """
+        return self.client.synthesize_speech(
+            input=synthesis_input, 
+            voice=voice, 
+            audio_config=audio_config
+        )
+```
+
+</details>
+
+<details>
+<summary>**Speech-to-Text Service (rin/stt.py)**</summary>
+
+```python
+# rin/stt.py
+import os
+import whisper
+import asyncio
+import logging
+from abc import ABC, abstractmethod
+from rin.audio import AudioHandler
+from rin.config import WHISPER_MODEL
+from rin.logging_config import loggers
+
+logger = loggers['stt']
+
+class STTInterface(ABC):
+    """Abstract base class for STT engines"""
+    
+    @staticmethod
+    def create(engine="whisper"):
+        """Factory method to create appropriate STT engine"""
+        if engine == "whisper":
+            return WhisperSTT()
+        elif engine == "google":
+            # Placeholder for future implementation
+            raise NotImplementedError("Google STT not yet implemented")
+        else:
+            raise ValueError(f"Unknown STT engine: {engine}")
+    
+    @abstractmethod
+    async def transcribe_audio(self, audio_file):
+        """Transcribe audio file to text"""
+        pass
+        
+    @abstractmethod
+    async def transcribe_from_mic(self, duration=5):
+        """Record from microphone and transcribe"""
+        pass
+
+class WhisperSTT(STTInterface):
+    def __init__(self):
+        logger.info(f"Loading Whisper model: {WHISPER_MODEL}")
+        # Load model in a separate thread to avoid blocking
+        loop = asyncio.get_event_loop()
+        self.model = loop.run_in_executor(None, lambda: whisper.load_model(WHISPER_MODEL))
+        logger.info("Whisper STT initialized")
+    
+    async def transcribe_audio(self, audio_file):
+        """Transcribe audio file using Whisper"""
         try:
-            request = texttospeech.ListVoicesRequest(language_code=language_code)
-            response = self.client.list_voices(request=request)
+            logger.info(f"Transcribing audio file: {audio_file}")
+            model = await self.model  # Ensure model is loaded
             
-            voices = []
-            for voice in response.voices:
-                voices.append({
-                    "name": voice.name,
-                    "gender": texttospeech.SsmlVoiceGender(voice.ssml_gender).name,
-                    "language_codes": list(voice.language_codes),
-                    "natural_sample_rate_hertz": voice.natural_sample_rate_hertz
-                })
-                
-            return voices
+            # Run transcription in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                lambda: model.transcribe(audio_file)
+            )
             
+            text = result["text"].strip()
+            logger.info(f"Transcription: {text}")
+            return text
         except Exception as e:
-            raise Exception(f"Error listing voices: {str(e)}")
+            logger.error(f"Error transcribing audio: {str(e)}", exc_info=True)
+            return ""
+    
+    async def transcribe_from_mic(self, duration=5):
+        """Record from microphone and transcribe"""
+        try:
+            audio_file = await AudioHandler.record_audio(duration=duration)
+            return await self.transcribe_audio(audio_file)
+        except Exception as e:
+            logger.error(f"Error in transcribe_from_mic: {str(e)}", exc_info=True)
+            return ""
+```
+
+</details>
+
+<details>
+<summary>**Audio Handler (rin/audio.py)**</summary>
+
+```python
+# rin/audio.py
+import sounddevice as sd
+import numpy as np
+import wave
+import logging
+import time
+from pathlib import Path
+import tempfile
+from pydub import AudioSegment
+from pydub.playback import play
+from rin.config import AUDIO_DIR
+from rin.logging_config import loggers
+
+logger = loggers['audio']
+
+class AudioHandler:
+    """Cross-platform audio recording and playback"""
+    
+    @staticmethod
+    async def record_audio(duration=5, sample_rate=16000):
+        """Record audio from microphone for specified duration"""
+        try:
+            logger.info(f"Recording {duration}s of audio at {sample_rate}Hz")
+            recording = sd.rec(
+                int(duration * sample_rate),
+                samplerate=sample_rate,
+                channels=1,
+                dtype='int16'
+            )
+            sd.wait()  # Wait until recording is finished
+            
+            # Save to temp file
+            temp_file = Path(tempfile.gettempdir()) / f"rin_recording_{int(time.time())}.wav"
+            with wave.open(str(temp_file), 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)  # 16-bit
+                wf.setframerate(sample_rate)
+                wf.writeframes(recording.tobytes())
+            
+            logger.info(f"Recording saved to {temp_file}")
+            return str(temp_file)
+        except Exception as e:
+            logger.error(f"Error recording audio: {str(e)}", exc_info=True)
+            raise
+    
+    @staticmethod
+    async def play_audio(file_path):
+        """Play audio file using pydub (cross-platform)"""
+        try:
+            logger.info(f"Playing audio: {file_path}")
+            sound = AudioSegment.from_file(file_path)
+            play(sound)
+            return True
+        except Exception as e:
+            logger.error(f"Error playing audio: {str(e)}", exc_info=True)
+            return False
 ```
 
 </details>
 
 ## Testing and Debugging Rule
 
-This rule helps you test and debug the Rin V0 prototype to ensure it works correctly before moving on to later development stages.
+This rule helps you test and debug the Rin V0 prototype with async support, STT/TTS features, and better error handling.
 
 <details>
 <summary>**Click to see the complete Testing and Debugging rule**</summary>
@@ -916,12 +1091,18 @@ When helping with testing and debugging the Rin V0 CLI:
 
 1. Manual Testing Approach:
    - Test each command individually with various inputs
-   - Test the CLI with valid and invalid environment variables
-   - Check for proper error handling and user feedback
+   - Test async functions using asyncio.run() in scripts
+   - Create separate test for each major component:
+     - LLM interaction
+     - TTS conversion
+     - STT transcription
+     - Audio recording/playback
+     - Storage operations
+   - Test happy paths and error cases
    - Test with different input types and edge cases
-   - Verify database operations are working correctly
-   - Test integration with external APIs
-   - Test CLI installation and execution
+   - Test with and without internet connectivity
+   - Verify logging is working correctly
+   - Test cross-platform issues on different OSes
 
 2. Common Issues to Check:
    - Missing environment variables or configuration
@@ -931,254 +1112,342 @@ When helping with testing and debugging the Rin V0 CLI:
    - Command syntax or usage problems
    - Error handling gaps
    - Dependency installation issues
-   - Virtual environment setup problems
+   - Audio device access problems
+   - Async event loop issues
+   - Microphone permissions and setup
+   - File format compatibility issues
 
-3. Debugging Techniques:
-   - Use print() statements for debugging
-   - Use Python's logging module for structured logging
-   - Set up Python debugger (pdb) for interactive debugging
-   - Check for typos in variable names
-   - Verify file paths are correct
-   - Use try/except blocks to isolate issues
-   - Test API calls in isolation
-   - Check database connectivity and queries
+3. Debugging Asynchronous Code:
+   - Use proper logging with context in async functions
+   - Add try/except with informative error messages
+   - Log entry and exit points of async functions
+   - Test async components in isolation
+   - Check for event loop issues (running, closed, etc.)
+   - Handle task cancellation properly
+   - Watch for blocking operations in async code
+   - Use asyncio.create_task() for truly parallel work
+   - Test timeouts and error handling
+   - Implement graceful degradation for network issues
 
-4. Environment Setup Validation:
+4. Audio and Speech Testing:
+   - Create test audio files for STT component
+   - Test microphone access cross-platform
+   - Verify audio playback works in different environments
+   - Test with different audio formats
+   - Check for sample rate issues
+   - Test with background noise to assess STT robustness
+   - Verify TTS output quality
+   - Test with different languages if supported
+   - Check for audio device errors
+   - Implement fallbacks for audio issues
+
+5. Environment Setup Validation:
    - Confirm Python version is compatible (3.9+)
    - Verify all dependencies are installed
    - Check that virtual environment is activated
-   - Check that API keys are valid and working
-   - Confirm database path is writable
-   - Verify file system permissions
+   - Validate API keys and credentials
+   - Verify paths in config are correct and accessible
+   - Check file system permissions for logs and audio
    - Test network connectivity for API calls
+   - Verify audio devices are accessible
+   - Confirm directory structure exists
+   - Test with minimal environment settings
 
-5. Test Scripts and Commands:
+6. Test Scripts and Documentation:
    - Create simple test scripts for common operations
-   - Use pytest for unit testing
-   - Test the CLI in a clean environment
-   - Document manual test procedures
-   - Create test data for consistent testing
-   - Create isolated test environments
-   - Implement cleanup routines after tests
-
-6. Documentation for Troubleshooting:
+   - Implement pytest fixtures for common test setup
+   - Add tests for async functions using pytest-asyncio
+   - Create mock classes for external services
    - Document common errors and solutions
-   - Add troubleshooting tips to README
-   - Include setup validation steps
-   - Document required environment variables
-   - Provide example commands and expected output
-   - Include contact information for support
+   - Include troubleshooting steps in README
+   - Add example commands with expected output
+   - Create sample configuration files
+   - Document platform-specific setup steps
+   - Add tests for factory methods and dependency injection
 ```
 
 </details>
 
-### Implementation Example
+### Implementation Examples
 
 <details>
-<summary>**Testing Script (tests/test_manual.py)**</summary>
+<summary>**Manual Testing Script (tests/test_manual.py)**</summary>
 
 ```python
 #!/usr/bin/env python3
 # tests/test_manual.py
 import os
-import subprocess
-import sys
+import asyncio
+import tempfile
 from pathlib import Path
 
-def run_command(cmd):
-    """Run a command and return the output"""
+# Initialize test environment
+test_env = {
+    "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY"),
+    "GOOGLE_APPLICATION_CREDENTIALS": os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"),
+    "TTS_ENGINE": "google",
+    "STT_ENGINE": "whisper",
+    "WHISPER_MODEL": "base",
+    "LOG_LEVEL": "DEBUG"
+}
+
+# Import after setting environment
+from rin.core import Assistant
+from rin.llm import LLMInterface
+from rin.tts import TTSInterface
+from rin.stt import STTInterface
+from rin.storage import Storage
+from rin.audio import AudioHandler
+from rin.config import AUDIO_DIR
+
+async def test_llm():
+    """Test LLM functionality"""
+    print("\n--- Testing LLM ---")
     try:
-        result = subprocess.run(
-            cmd, 
-            shell=True, 
-            check=True,
-            capture_output=True,
-            text=True
-        )
-        return result.stdout
-    except subprocess.CalledProcessError as e:
-        print(f"Command failed with exit code {e.returncode}")
-        print(f"Error output: {e.stderr}")
+        llm = LLMInterface.create()
+        query = "What is the capital of France?"
+        print(f"Query: {query}")
+        response = await llm.generate_response(query)
+        print(f"Response: {response}")
+        assert "Paris" in response, "Expected 'Paris' in response"
+        print("✅ LLM test passed")
+        return True
+    except Exception as e:
+        print(f"❌ LLM test failed: {str(e)}")
+        return False
+
+async def test_tts():
+    """Test TTS functionality"""
+    print("\n--- Testing TTS ---")
+    try:
+        tts = TTSInterface.create()
+        text = "This is a test of the text to speech system."
+        print(f"Text: {text}")
+        audio_path = await tts.synthesize(text)
+        print(f"Audio saved to: {audio_path}")
+        assert os.path.exists(audio_path), "Audio file was not created"
+        print("✅ TTS test passed")
+        return audio_path
+    except Exception as e:
+        print(f"❌ TTS test failed: {str(e)}")
         return None
 
-def main():
-    # Define test cases
-    tests = [
-        {
-            "name": "Help command",
-            "cmd": "rin --help",
-            "expected_in_output": "Usage:"
-        },
-        {
-            "name": "Ask command",
-            "cmd": "rin ask \"What is the capital of France?\"",
-            "expected_in_output": "Paris"
-        },
-        {
-            "name": "Remember command",
-            "cmd": "rin remember",
-            "expected_in_output": "Interaction"
-        },
-        {
-            "name": "Speak command",
-            "cmd": "rin speak \"Hello world\" -o test-output.mp3",
-            "expected_in_output": "Audio content written to",
-            "cleanup": lambda: Path("test-output.mp3").unlink(missing_ok=True)
-        }
-    ]
+async def test_audio_playback(audio_path):
+    """Test audio playback"""
+    print("\n--- Testing Audio Playback ---")
+    if not audio_path:
+        print("❌ Skipping audio playback test (no audio file)")
+        return False
     
-    # Run tests
+    try:
+        print(f"Playing audio file: {audio_path}")
+        result = await AudioHandler.play_audio(audio_path)
+        assert result, "Audio playback failed"
+        print("✅ Audio playback test passed")
+        return True
+    except Exception as e:
+        print(f"❌ Audio playback test failed: {str(e)}")
+        return False
+
+async def test_storage():
+    """Test storage operations"""
+    print("\n--- Testing Storage ---")
+    try:
+        # Use temp directory for testing
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Set RIN_DIR to temp directory for test
+            import rin.config
+            original_dir = rin.config.RIN_DIR
+            rin.config.RIN_DIR = Path(temp_dir)
+            
+            # Create storage
+            storage = Storage()
+            
+            # Test saving
+            query = "Test query"
+            response = "Test response"
+            print(f"Saving interaction: Q: {query}, R: {response}")
+            save_result = await storage.save_interaction(query, response)
+            assert save_result, "Failed to save interaction"
+            
+            # Test retrieval
+            interactions = await storage.get_interactions()
+            print(f"Retrieved {len(interactions)} interactions")
+            assert len(interactions) == 1, "Expected 1 interaction"
+            assert interactions[0]["query"] == query, "Query doesn't match"
+            assert interactions[0]["response"] == response, "Response doesn't match"
+            
+            # Restore config
+            rin.config.RIN_DIR = original_dir
+            
+            print("✅ Storage test passed")
+            return True
+    except Exception as e:
+        print(f"❌ Storage test failed: {str(e)}")
+        return False
+
+async def test_core_assistant():
+    """Test the core Assistant class"""
+    print("\n--- Testing Core Assistant ---")
+    try:
+        # Initialize assistant
+        assistant = Assistant()
+        
+        # Test processing a query
+        query = "What's the meaning of life?"
+        print(f"Processing query: {query}")
+        result = await assistant.process_query(query)
+        
+        # Verify response
+        assert "text" in result, "Response missing text field"
+        print(f"Response: {result['text'][:50]}...")
+        
+        print("✅ Assistant test passed")
+        return True
+    except Exception as e:
+        print(f"❌ Assistant test failed: {str(e)}")
+        return False
+
+async def main():
+    """Run all tests"""
     print("Running Rin CLI tests...\n")
     
+    # Keep track of passed/failed tests
     passed = 0
     failed = 0
     
-    for test in tests:
-        print(f"Test: {test['name']}")
-        
-        # Execute the command
-        output = run_command(test["cmd"])
-        
-        if output is None:
-            print(f"❌ FAILED: Command execution error")
-            failed += 1
-            continue
-        
-        # Check if expected text is in the output
-        if test["expected_in_output"] in output:
-            print(f"✅ PASSED: Output contains \"{test['expected_in_output']}\"")
-            passed += 1
-        else:
-            print(f"❌ FAILED: Output does not contain \"{test['expected_in_output']}\"")
-            print(f"Output: {output.strip()}")
-            failed += 1
-        
-        # Run cleanup function if provided
-        if "cleanup" in test:
-            test["cleanup"]()
-            print("Cleaned up test files")
-        
-        print()  # Add empty line between tests
+    # Test LLM
+    if await test_llm():
+        passed += 1
+    else:
+        failed += 1
+    
+    # Test TTS
+    audio_path = await test_tts()
+    if audio_path:
+        passed += 1
+    else:
+        failed += 1
+    
+    # Test audio playback
+    if await test_audio_playback(audio_path):
+        passed += 1
+    else:
+        failed += 1
+    
+    # Test storage
+    if await test_storage():
+        passed += 1
+    else:
+        failed += 1
+    
+    # Test core assistant
+    if await test_core_assistant():
+        passed += 1
+    else:
+        failed += 1
     
     # Print summary
-    print(f"Test summary: {passed} passed, {failed} failed")
+    print(f"\nTest summary: {passed} passed, {failed} failed")
     return 1 if failed > 0 else 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    exit_code = asyncio.run(main())
+    exit(exit_code)
 ```
 
 </details>
 
 <details>
-<summary>**Unit Test Example (tests/test_storage.py)**</summary>
+<summary>**Pytest Example (tests/test_async.py)**</summary>
 
 ```python
-# tests/test_storage.py
+# tests/test_async.py
 import pytest
+import asyncio
 import os
-import sqlite3
-from pathlib import Path
 import tempfile
-import shutil
+from pathlib import Path
+from unittest.mock import patch, MagicMock
 
-# Import the Storage class to test
+# Import the modules to test
 from rin.storage import Storage
+from rin.llm import LLMInterface, OpenAIClient
+from rin.config import RIN_DIR
+
+# Async fixture for pytest
+@pytest.fixture
+def event_loop():
+    """Create an instance of the default event loop for each test case."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 @pytest.fixture
-def temp_home_dir():
-    """Create a temporary home directory for testing"""
-    original_home = os.environ.get("HOME")
+def temp_rin_dir():
+    """Create a temporary directory for testing"""
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Set HOME to the temp directory
-        os.environ["HOME"] = temp_dir
-        yield temp_dir
-        # Restore original HOME
-        if original_home:
-            os.environ["HOME"] = original_home
+        # Patch RIN_DIR to use temp directory
+        with patch('rin.config.RIN_DIR', Path(temp_dir)):
+            # Create subdirectories
+            Path(temp_dir, "logs").mkdir(exist_ok=True)
+            Path(temp_dir, "audio").mkdir(exist_ok=True)
+            yield Path(temp_dir)
 
-def test_storage_initialization(temp_home_dir):
-    """Test that the Storage class initializes correctly"""
+@pytest.mark.asyncio
+async def test_storage_save_and_retrieve(temp_rin_dir):
+    """Test async storage operations"""
+    # Create storage instance
     storage = Storage()
     
-    # Check that the database directory was created
-    db_dir = Path(temp_home_dir) / ".rin"
-    assert db_dir.exists()
-    assert db_dir.is_dir()
+    # Test data
+    test_query = "What is the weather today?"
+    test_response = "I don't have real-time weather data."
     
-    # Check that the database file was created
-    db_path = db_dir / "rin.db"
-    assert db_path.exists()
-    assert db_path.is_file()
-    
-    # Check that we can connect to the database
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    
-    # Check that the interactions table exists
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='interactions'")
-    result = cursor.fetchone()
-    assert result is not None
-    assert result[0] == "interactions"
-    
-    # Clean up
-    conn.close()
-
-def test_save_and_retrieve_interaction(temp_home_dir):
-    """Test saving and retrieving interactions"""
-    storage = Storage()
-    
-    # Save a test interaction
-    test_query = "What is the meaning of life?"
-    test_response = "42"
-    row_id = storage.save_interaction(test_query, test_response)
-    
-    # Check that we got a valid row ID
-    assert row_id is not None
-    assert row_id > 0
+    # Save interaction
+    result = await storage.save_interaction(test_query, test_response)
+    assert result is True, "Failed to save interaction"
     
     # Retrieve interactions
-    interactions = storage.get_interactions()
-    
-    # Check that we got our test interaction back
-    assert len(interactions) == 1
-    assert interactions[0]["query"] == test_query
-    assert interactions[0]["response"] == test_response
-    assert "timestamp" in interactions[0]
+    interactions = await storage.get_interactions()
+    assert len(interactions) == 1, "Expected 1 interaction"
+    assert interactions[0]["query"] == test_query, "Query doesn't match"
+    assert interactions[0]["response"] == test_response, "Response doesn't match"
 
-def test_cleanup_old_interactions(temp_home_dir):
-    """Test cleaning up old interactions"""
-    storage = Storage()
+@pytest.mark.asyncio
+async def test_llm_with_mock():
+    """Test LLM with mocked response"""
+    # Mock the OpenAI API call
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = "This is a mocked response"
     
-    # Save some test interactions
-    storage.save_interaction("Test 1", "Response 1")
-    storage.save_interaction("Test 2", "Response 2")
-    storage.save_interaction("Test 3", "Response 3")
-    
-    # Check that we have 3 interactions
-    interactions = storage.get_interactions()
-    assert len(interactions) == 3
-    
-    # Manually adjust the timestamp of the first interaction to be older
-    db_path = Path(temp_home_dir) / ".rin" / "rin.db"
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE interactions SET timestamp = datetime('now', '-40 days') WHERE id = ?",
-        (interactions[0]["id"],)
-    )
-    conn.commit()
-    conn.close()
-    
-    # Clean up interactions older than 30 days
-    deleted_count = storage.cleanup_old_interactions(days=30)
-    
-    # Check that we deleted 1 interaction
-    assert deleted_count == 1
-    
-    # Check that we have 2 interactions left
-    interactions = storage.get_interactions()
-    assert len(interactions) == 2
+    # Create patched client
+    with patch('openai.ChatCompletion.create', return_value=mock_response):
+        llm = OpenAIClient()
+        response = await llm.generate_response("Test query")
+        
+        assert response == "This is a mocked response", "Response doesn't match expected mock"
+
+@pytest.mark.asyncio
+async def test_factory_pattern():
+    """Test factory pattern for LLM creation"""
+    # Mock the OpenAI API calls
+    with patch('rin.llm.OpenAIClient') as mock_openai:
+        # Set up mock return value
+        instance = MagicMock()
+        mock_openai.return_value = instance
+        
+        # Test factory method
+        llm = LLMInterface.create()
+        
+        # Verify the correct class was instantiated
+        mock_openai.assert_called_once()
+        assert llm == instance, "Factory didn't return expected instance"
+        
+        # Test with invalid provider
+        with pytest.raises(ValueError):
+            LLMInterface.create("invalid_provider")
 ```
 
 </details>
@@ -1198,3 +1467,5 @@ You can also chain rules together using the <code>@file</code> reference system:
 
 # Additional rule content below
 ```
+
+These rules are designed to work together to guide you through implementing the enhanced version of Rin V0 with async support, proper error handling, and a more modular architecture that will make expanding to V1 features much easier.

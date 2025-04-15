@@ -1,76 +1,618 @@
+# Rin V0 — Step 1: Developer & Testing Tools Setup
+
+This guide sets up the foundational development environment for Rin's prototype (V0), a voice-first AI assistant. This step includes core CLI capabilities, GPT-based interaction, TTS integration, local storage, and a modular code structure designed for scalability.
+
+> 🟣 This step covers only V0-level features. V1 features (e.g., conversational memory, wake word, plugin system) will build upon this base.
+
 ---
-title: "Step 1: Developer and Testing"
-navOrder: 2
+
+## ✅ Prerequisites
+
+Before proceeding, ensure you have:
+
+1. **Python 3.9+** installed (use `pyenv` or official downloads).
+2. **Code Editor** such as VS Code or PyCharm.
+3. **Google Cloud Project** with Text-to-Speech API enabled.
+4. **OpenAI API Key** from https://platform.openai.com/
+5. **Virtual Environment** knowledge (`venv`, `pip`, `.env`).
+6. **Cross-platform CLI** familiarity (Unix/Mac/Windows/Pi).
+7. (Optional) Familiarity with modular Python structure and command-line tooling.
+
 ---
-# Step 1: Developer & Testing Tools Setup
 
-This guide provides a step-by-step approach to building the foundational developer tools for Rin V0.
+## 📁 Project Initialization
 
-## Prerequisites
-
-Before you begin, ensure you have the following prerequisites installed and set up:
-
-1. **Python**: Ensure Python 3.9+ is installed on your system. We'll use pip for package management.
-
-2. **Code Editor**: A code editor such as Visual Studio Code, PyCharm, or any other editor of your choice for writing and editing your code.
-
-3. **API Keys**:
-   - **OpenAI API Key**: Required for interacting with OpenAI's models.
-   - **Google Cloud Credentials**: Needed for using Google Cloud Text-to-Speech. Ensure you have downloaded the JSON credentials file after setting up a Google Cloud project.
-
-4. **Virtual Environment**: Knowledge of Python virtual environments to isolate dependencies.
-
-5. **Command Line Tools**: Familiarity with command line operations is necessary as the setup involves running shell commands.
-
-6. **Internet Connection**: Required for downloading packages, interacting with APIs, and fetching updates.
-
-7. **Environment Configuration**: Knowledge of how to set and use environment variables is crucial, especially for managing API keys and other sensitive information securely.
-
-Once you have all the prerequisites set up, you can proceed with the following steps to configure your development and testing environment.
-
-## CLI Interface Setup
-
-### 1. Create Basic Project Structure
 ```bash
-mkdir -p rin-cli
-cd rin-cli
+mkdir rin-cli && cd rin-cli
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install required packages
-pip install click python-dotenv openai langchain google-cloud-texttospeech pydantic
-touch .env
+pip install -U pip
+pip install click python-dotenv openai google-cloud-texttospeech sqlite-utils \
+  sounddevice numpy whisper pydub asyncio python-logging aiohttp
+
+# Project structure
 mkdir rin
-touch rin/__init__.py rin/cli.py rin/storage.py rin/llm.py rin/tts.py
+mkdir -p ~/.rin/drafts ~/.rin/logs
+
+# Create modules
+touch rin/__init__.py rin/cli.py rin/llm.py rin/tts.py rin/storage.py
+touch rin/core.py rin/stt.py rin/audio.py rin/config.py rin/logging_config.py
 ```
 
-### 2. Configure Environment
+Create a `.env` file with your credentials:
+
 ```env
-# .env
 OPENAI_API_KEY=your_openai_key
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/google-credentials.json
+GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-credentials.json
+AUDIO_OUTPUT_DIR=~/.rin/audio
+TTS_ENGINE=google  # Options: google, coqui (when implemented)
+STT_ENGINE=whisper  # Options: whisper, google (when implemented)
+LOG_LEVEL=INFO
 ```
 
-### 3. Build CLI Entry Point
+---
+
+## 📋 Configuration System
+
+Centralized config management for flexibility.
+
 ```python
-# rin/cli.py
+# rin/config.py
 import os
-import click
-from dotenv import load_dotenv
 from pathlib import Path
-import json
+from dotenv import load_dotenv
 
-from rin.storage import Storage
-from rin.llm import OpenAIClient
-from rin.tts import TextToSpeech
-
-# Load environment variables
+# Load .env file
 load_dotenv()
 
-# Initialize components
-storage = Storage()
-llm_client = OpenAIClient()
-tts_client = TextToSpeech()
+# Base paths
+HOME_DIR = Path.home()
+RIN_DIR = HOME_DIR / ".rin"
+LOG_DIR = RIN_DIR / "logs"
+AUDIO_DIR = RIN_DIR / "audio"
+
+# Ensure directories exist
+RIN_DIR.mkdir(exist_ok=True)
+LOG_DIR.mkdir(exist_ok=True)
+AUDIO_DIR.mkdir(exist_ok=True)
+
+# API keys and credentials
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GOOGLE_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+# Engine options
+TTS_ENGINE = os.getenv("TTS_ENGINE", "google")
+STT_ENGINE = os.getenv("STT_ENGINE", "whisper")
+
+# Application settings
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4")
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
+
+# Default system prompt
+SYSTEM_PROMPT = "You are Rin, a helpful personal assistant. Be concise but thorough."
+```
+
+---
+
+## 📝 Logging Configuration
+
+```python
+# rin/logging_config.py
+import logging
+import sys
+from pathlib import Path
+from rin.config import LOG_DIR, LOG_LEVEL
+
+def setup_logging():
+    log_file = LOG_DIR / "rin.log"
+    
+    # Configure logging
+    log_level = getattr(logging, LOG_LEVEL.upper(), logging.INFO)
+    
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+    
+    # Create specific loggers
+    loggers = {
+        'core': logging.getLogger('rin.core'),
+        'llm': logging.getLogger('rin.llm'),
+        'tts': logging.getLogger('rin.tts'),
+        'stt': logging.getLogger('rin.stt'),
+        'storage': logging.getLogger('rin.storage'),
+        'audio': logging.getLogger('rin.audio'),
+    }
+    
+    return loggers
+
+loggers = setup_logging()
+```
+
+---
+
+## 🔧 Core Application Layer
+
+Abstract core functionality from UI.
+
+```python
+# rin/core.py
+import asyncio
+import logging
+from rin.llm import LLMInterface
+from rin.tts import TTSInterface
+from rin.stt import STTInterface
+from rin.storage import Storage
+from rin.config import TTS_ENGINE, STT_ENGINE
+from rin.logging_config import loggers
+
+logger = loggers['core']
+
+class Assistant:
+    """Core assistant logic, separate from UI/CLI concerns"""
+    
+    def __init__(self):
+        self.storage = Storage()
+        self.llm = LLMInterface.create()
+        self.tts = TTSInterface.create(TTS_ENGINE)
+        self.stt = STTInterface.create(STT_ENGINE)
+        logger.info("Assistant initialized with TTS: %s, STT: %s", TTS_ENGINE, STT_ENGINE)
+    
+    async def process_query(self, query, respond_with_voice=False):
+        """Process a text query and return response"""
+        try:
+            logger.info("Processing query: %s", query)
+            response = await self.llm.generate_response(query)
+            await self.storage.save_interaction(query, response)
+            
+            audio_path = None
+            if respond_with_voice:
+                audio_path = await self.tts.synthesize(response)
+                
+            return {
+                "text": response,
+                "audio_path": audio_path
+            }
+        except Exception as e:
+            logger.error("Error processing query: %s", str(e), exc_info=True)
+            return {
+                "error": str(e),
+                "text": "I encountered an error while processing your request."
+            }
+    
+    async def listen_and_respond(self):
+        """Record from microphone, convert to text, and respond"""
+        try:
+            logger.info("Listening for speech input")
+            query = await self.stt.transcribe_from_mic()
+            if not query:
+                return {"error": "Could not understand audio"}
+                
+            return await self.process_query(query, respond_with_voice=True)
+        except Exception as e:
+            logger.error("Error in listen and respond: %s", str(e), exc_info=True)
+            return {"error": str(e)}
+    
+    async def get_interaction_history(self, limit=10):
+        """Retrieve conversation history"""
+        return await self.storage.get_interactions(limit)
+```
+
+---
+
+## 🎤 Audio Module
+
+Cross-platform audio handling.
+
+```python
+# rin/audio.py
+import sounddevice as sd
+import numpy as np
+import wave
+import logging
+import time
+from pathlib import Path
+import tempfile
+from pydub import AudioSegment
+from pydub.playback import play
+from rin.config import AUDIO_DIR
+from rin.logging_config import loggers
+
+logger = loggers['audio']
+
+class AudioHandler:
+    """Cross-platform audio recording and playback"""
+    
+    @staticmethod
+    async def record_audio(duration=5, sample_rate=16000):
+        """Record audio from microphone for specified duration"""
+        try:
+            logger.info(f"Recording {duration}s of audio at {sample_rate}Hz")
+            recording = sd.rec(
+                int(duration * sample_rate),
+                samplerate=sample_rate,
+                channels=1,
+                dtype='int16'
+            )
+            sd.wait()  # Wait until recording is finished
+            
+            # Save to temp file
+            temp_file = Path(tempfile.gettempdir()) / f"rin_recording_{int(time.time())}.wav"
+            with wave.open(str(temp_file), 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)  # 16-bit
+                wf.setframerate(sample_rate)
+                wf.writeframes(recording.tobytes())
+            
+            logger.info(f"Recording saved to {temp_file}")
+            return str(temp_file)
+        except Exception as e:
+            logger.error(f"Error recording audio: {str(e)}", exc_info=True)
+            raise
+    
+    @staticmethod
+    async def play_audio(file_path):
+        """Play audio file using pydub (cross-platform)"""
+        try:
+            logger.info(f"Playing audio: {file_path}")
+            sound = AudioSegment.from_file(file_path)
+            play(sound)
+            return True
+        except Exception as e:
+            logger.error(f"Error playing audio: {str(e)}", exc_info=True)
+            return False
+```
+
+---
+
+## 🤖 Language Model (LLM) Handler
+
+Factory pattern for potential model switching.
+
+```python
+# rin/llm.py
+import os
+import openai
+import asyncio
+import logging
+from abc import ABC, abstractmethod
+from rin.config import OPENAI_API_KEY, LLM_MODEL, SYSTEM_PROMPT
+from rin.logging_config import loggers
+
+logger = loggers['llm']
+
+class LLMInterface(ABC):
+    """Abstract base class for LLM providers"""
+    
+    @staticmethod
+    def create(provider="openai"):
+        """Factory method to create appropriate LLM client"""
+        if provider == "openai":
+            return OpenAIClient()
+        # Add more providers here as needed
+        else:
+            raise ValueError(f"Unknown LLM provider: {provider}")
+    
+    @abstractmethod
+    async def generate_response(self, query):
+        """Generate a response to the given query"""
+        pass
+
+class OpenAIClient(LLMInterface):
+    def __init__(self):
+        openai.api_key = OPENAI_API_KEY
+        self.model = LLM_MODEL
+        logger.info(f"Initialized OpenAI client with model {self.model}")
+    
+    async def generate_response(self, query):
+        """Asynchronously generate a response using OpenAI"""
+        try:
+            logger.info(f"Generating response for query using {self.model}")
+            
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: openai.ChatCompletion.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": query}
+                    ],
+                    temperature=0.7,
+                    max_tokens=500
+                )
+            )
+            
+            content = response.choices[0].message.content
+            logger.debug(f"Generated response: {content[:50]}...")
+            return content
+        except Exception as e:
+            logger.error(f"Error generating response: {str(e)}", exc_info=True)
+            raise
+```
+
+---
+
+## 🔊 Text-to-Speech with Engine Abstraction
+
+```python
+# rin/tts.py
+import os
+import time
+import asyncio
+import logging
+from abc import ABC, abstractmethod
+from pathlib import Path
+from google.cloud import texttospeech
+from rin.config import AUDIO_DIR, GOOGLE_CREDENTIALS
+from rin.logging_config import loggers
+
+logger = loggers['tts']
+
+class TTSInterface(ABC):
+    """Abstract base class for TTS engines"""
+    
+    @staticmethod
+    def create(engine="google"):
+        """Factory method to create appropriate TTS engine"""
+        if engine == "google":
+            return GoogleTTS()
+        elif engine == "coqui":
+            # Placeholder for future implementation
+            raise NotImplementedError("Coqui TTS not yet implemented")
+        else:
+            raise ValueError(f"Unknown TTS engine: {engine}")
+    
+    @abstractmethod
+    async def synthesize(self, text):
+        """Convert text to speech and return audio file path"""
+        pass
+
+class GoogleTTS(TTSInterface):
+    def __init__(self):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_CREDENTIALS
+        self.client = texttospeech.TextToSpeechClient()
+        logger.info("Initialized Google TTS client")
+    
+    async def synthesize(self, text):
+        """Asynchronously synthesize text to speech using Google Cloud"""
+        try:
+            logger.info(f"Synthesizing text: {text[:50]}...")
+            
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self._synthesize_sync(text)
+            )
+            
+            # Generate unique filename
+            timestamp = int(time.time())
+            output_file = AUDIO_DIR / f"rin_tts_{timestamp}.mp3"
+            
+            # Save audio content
+            with open(output_file, "wb") as out:
+                out.write(response.audio_content)
+                
+            logger.info(f"Audio saved to {output_file}")
+            return str(output_file)
+        except Exception as e:
+            logger.error(f"Error synthesizing speech: {str(e)}", exc_info=True)
+            raise
+    
+    def _synthesize_sync(self, text):
+        """Synchronous Google TTS call (to be run in executor)"""
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="en-US", 
+            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3
+        )
+        
+        return self.client.synthesize_speech(
+            input=synthesis_input, 
+            voice=voice, 
+            audio_config=audio_config
+        )
+```
+
+---
+
+## 🎧 Speech-to-Text Module
+
+```python
+# rin/stt.py
+import os
+import whisper
+import asyncio
+import logging
+from abc import ABC, abstractmethod
+from rin.audio import AudioHandler
+from rin.config import WHISPER_MODEL
+from rin.logging_config import loggers
+
+logger = loggers['stt']
+
+class STTInterface(ABC):
+    """Abstract base class for STT engines"""
+    
+    @staticmethod
+    def create(engine="whisper"):
+        """Factory method to create appropriate STT engine"""
+        if engine == "whisper":
+            return WhisperSTT()
+        elif engine == "google":
+            # Placeholder for future implementation
+            raise NotImplementedError("Google STT not yet implemented")
+        else:
+            raise ValueError(f"Unknown STT engine: {engine}")
+    
+    @abstractmethod
+    async def transcribe_audio(self, audio_file):
+        """Transcribe audio file to text"""
+        pass
+        
+    @abstractmethod
+    async def transcribe_from_mic(self, duration=5):
+        """Record from microphone and transcribe"""
+        pass
+
+class WhisperSTT(STTInterface):
+    def __init__(self):
+        logger.info(f"Loading Whisper model: {WHISPER_MODEL}")
+        # Load model in a separate thread to avoid blocking
+        loop = asyncio.get_event_loop()
+        self.model = loop.run_in_executor(None, lambda: whisper.load_model(WHISPER_MODEL))
+        logger.info("Whisper STT initialized")
+    
+    async def transcribe_audio(self, audio_file):
+        """Transcribe audio file using Whisper"""
+        try:
+            logger.info(f"Transcribing audio file: {audio_file}")
+            model = await self.model  # Ensure model is loaded
+            
+            # Run transcription in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                lambda: model.transcribe(audio_file)
+            )
+            
+            text = result["text"].strip()
+            logger.info(f"Transcription: {text}")
+            return text
+        except Exception as e:
+            logger.error(f"Error transcribing audio: {str(e)}", exc_info=True)
+            return ""
+    
+    async def transcribe_from_mic(self, duration=5):
+        """Record from microphone and transcribe"""
+        try:
+            audio_file = await AudioHandler.record_audio(duration=duration)
+            return await self.transcribe_audio(audio_file)
+        except Exception as e:
+            logger.error(f"Error in transcribe_from_mic: {str(e)}", exc_info=True)
+            return ""
+```
+
+---
+
+## 🧠 Persistent Local Memory with Async Support
+
+```python
+# rin/storage.py
+import sqlite3
+import asyncio
+import logging
+from pathlib import Path
+from rin.config import RIN_DIR
+from rin.logging_config import loggers
+
+logger = loggers['storage']
+
+class Storage:
+    """Database storage with async support"""
+    
+    def __init__(self):
+        self.path = RIN_DIR / "rin.db"
+        # Initialize synchronously
+        self._init_db()
+        logger.info(f"Storage initialized at {self.path}")
+    
+    def _init_db(self):
+        """Initialize database schema"""
+        conn = sqlite3.connect(self.path)
+        conn.execute('''CREATE TABLE IF NOT EXISTS interactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            query TEXT,
+            response TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )''')
+        conn.commit()
+        conn.close()
+    
+    async def save_interaction(self, query, response):
+        """Save interaction to database asynchronously"""
+        try:
+            logger.debug(f"Saving interaction: Q: {query[:50]}... R: {response[:50]}...")
+            
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None,
+                self._save_interaction_sync,
+                query,
+                response
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error saving interaction: {str(e)}", exc_info=True)
+            return False
+    
+    def _save_interaction_sync(self, query, response):
+        """Synchronous database save (to be run in executor)"""
+        conn = sqlite3.connect(self.path)
+        conn.execute(
+            "INSERT INTO interactions (query, response) VALUES (?, ?)", 
+            (query, response)
+        )
+        conn.commit()
+        conn.close()
+    
+    async def get_interactions(self, limit=10):
+        """Get recent interactions asynchronously"""
+        try:
+            logger.debug(f"Retrieving {limit} recent interactions")
+            
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                self._get_interactions_sync,
+                limit
+            )
+            return result
+        except Exception as e:
+            logger.error(f"Error getting interactions: {str(e)}", exc_info=True)
+            return []
+    
+    def _get_interactions_sync(self, limit):
+        """Synchronous database query (to be run in executor)"""
+        conn = sqlite3.connect(self.path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT query, response FROM interactions ORDER BY timestamp DESC LIMIT ?", 
+            (limit,)
+        )
+        result = [dict(query=row[0], response=row[1]) for row in cursor.fetchall()]
+        conn.close()
+        return result
+```
+
+---
+
+## 🔧 Modular CLI Interface
+
+```python
+# rin/cli.py
+import click
+import asyncio
+import logging
+from rin.core import Assistant
+from rin.audio import AudioHandler
+from rin.logging_config import loggers
+
+logger = loggers['core']
+assistant = Assistant()
 
 @click.group()
 def cli():
@@ -82,40 +624,43 @@ def cli():
 def ask(query):
     """Ask Rin a question"""
     try:
-        # Get response from LLM
-        response = llm_client.generate_response(query)
-        click.echo(f"Rin: {response}")
+        response = asyncio.run(assistant.process_query(query))
+        click.echo(f"Rin: {response['text']}")
+    except Exception as e:
+        click.echo(f"Error: {str(e)}")
+
+@cli.command()
+@click.option('--voice/--no-voice', default=True, help="Enable/disable voice response")
+def listen(voice):
+    """Listen for voice command and respond"""
+    try:
+        result = asyncio.run(assistant.listen_and_respond())
+        click.echo(f"You said: {result.get('query', '')}")
+        click.echo(f"Rin: {result.get('text', '')}")
         
-        # Store interaction in memory
-        storage.save_interaction(query, response)
+        if voice and result.get('audio_path'):
+            asyncio.run(AudioHandler.play_audio(result['audio_path']))
     except Exception as e:
         click.echo(f"Error: {str(e)}")
 
 @cli.command()
 def remember():
-    """Show past interactions"""
+    """Show saved interactions"""
     try:
-        interactions = storage.get_interactions()
-        if not interactions:
-            click.echo("No past interactions found.")
-            return
-        
-        click.echo("Past interactions:")
+        interactions = asyncio.run(assistant.get_interaction_history())
         for i, item in enumerate(interactions):
-            click.echo(f"\n--- Interaction {i+1} ---")
-            click.echo(f"You: {item['query']}")
-            click.echo(f"Rin: {item['response']}")
+            click.echo(f"[{i+1}] You: {item['query']}\nRin: {item['response']}\n")
     except Exception as e:
-        click.echo(f"Error retrieving interactions: {str(e)}")
+        click.echo(f"Error: {str(e)}")
 
 @cli.command()
 @click.argument('text')
 def speak(text):
-    """Convert text to speech using Google Cloud TTS"""
+    """Convert text to speech"""
     try:
-        output_file = "output.mp3"
-        tts_client.synthesize_speech(text, output_file)
-        click.echo(f"Audio content written to: {output_file}")
+        path = asyncio.run(assistant.tts.synthesize(text))
+        click.echo(f"Audio saved to {path}")
+        asyncio.run(AudioHandler.play_audio(path))
     except Exception as e:
         click.echo(f"Error: {str(e)}")
 
@@ -123,174 +668,35 @@ if __name__ == '__main__':
     cli()
 ```
 
-### 4. Implement LLM Client
+---
 
-```python
-# rin/llm.py
-import os
-import openai
+## ⚙️ Setup & Install
 
-class OpenAIClient:
-    def __init__(self):
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        if not openai.api_key:
-            raise ValueError("OpenAI API key not found. Please set OPENAI_API_KEY environment variable.")
-    
-    def generate_response(self, query, model="gpt-4"):
-        """Generate a response from OpenAI models"""
-        try:
-            response = openai.ChatCompletion.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": "You are Rin, a helpful personal assistant."},
-                    {"role": "user", "content": query}
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            raise Exception(f"Error calling OpenAI API: {str(e)}")
+### 1. Install CLI
+```bash
+pip install -e .
 ```
 
-### 5. Implement TTS Client
-
+### 2. `setup.py` (optional, if distributing)
 ```python
-# rin/tts.py
-import os
-from google.cloud import texttospeech
-
-class TextToSpeech:
-    def __init__(self):
-        # Google Cloud TTS client will look for GOOGLE_APPLICATION_CREDENTIALS env var
-        if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-            raise ValueError("Google Cloud credentials not found. Please set GOOGLE_APPLICATION_CREDENTIALS environment variable.")
-        
-        self.client = texttospeech.TextToSpeechClient()
-    
-    def synthesize_speech(self, text, output_file="output.mp3"):
-        """Convert text to speech and save to a file"""
-        try:
-            synthesis_input = texttospeech.SynthesisInput(text=text)
-            
-            voice = texttospeech.VoiceSelectionParams(
-                language_code="en-US",
-                ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-            )
-            
-            audio_config = texttospeech.AudioConfig(
-                audio_encoding=texttospeech.AudioEncoding.MP3
-            )
-            
-            response = self.client.synthesize_speech(
-                input=synthesis_input, voice=voice, audio_config=audio_config
-            )
-            
-            with open(output_file, "wb") as out:
-                out.write(response.audio_content)
-                
-            return output_file
-        except Exception as e:
-            raise Exception(f"Error synthesizing speech: {str(e)}")
-```
-
-## Local Memory Implementation
-
-### 1. Create SQLite-based Storage
-```python
-# rin/storage.py
-import sqlite3
-import os
-import json
-from pathlib import Path
-from datetime import datetime
-
-class Storage:
-    def __init__(self):
-        # Create data directory in user's home if it doesn't exist
-        data_dir = Path.home() / ".rin"
-        data_dir.mkdir(exist_ok=True)
-        
-        # Set up the database
-        self.db_path = data_dir / "rin.db"
-        self.conn = sqlite3.connect(str(self.db_path))
-        self.init_db()
-        
-        print(f"Local memory initialized at {self.db_path}")
-    
-    def init_db(self):
-        """Initialize the database tables"""
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS interactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                query TEXT,
-                response TEXT,
-                timestamp TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        self.conn.commit()
-    
-    def save_interaction(self, query, response):
-        """Store an interaction in the database"""
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "INSERT INTO interactions (query, response) VALUES (?, ?)",
-            (query, response)
-        )
-        self.conn.commit()
-        return cursor.lastrowid
-    
-    def get_interactions(self, limit=10):
-        """Retrieve recent interactions from the database"""
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "SELECT id, query, response, timestamp FROM interactions ORDER BY timestamp DESC LIMIT ?",
-            (limit,)
-        )
-        rows = cursor.fetchall()
-        
-        # Convert to list of dictionaries
-        interactions = []
-        for row in rows:
-            interactions.append({
-                "id": row[0],
-                "query": row[1],
-                "response": row[2],
-                "timestamp": row[3]
-            })
-        
-        return interactions
-    
-    def __del__(self):
-        """Ensure database connection is closed when the object is destroyed"""
-        if hasattr(self, 'conn'):
-            self.conn.close()
-```
-
-### 2. Create Package Setup
-```python
-# rin/__init__.py
-__version__ = "0.0.1"
-```
-
-### 3. Create Setup File
-```python
-# setup.py (in root directory)
 from setuptools import setup, find_packages
 
 setup(
-    name="rin-cli",
-    version="0.0.1",
+    name='rin-cli',
+    version='0.1.0',
     packages=find_packages(),
-    include_package_data=True,
     install_requires=[
-        "click",
-        "python-dotenv",
-        "openai",
-        "langchain",
-        "google-cloud-texttospeech",
-        "pydantic",
+        'click',
+        'openai',
+        'python-dotenv',
+        'google-cloud-texttospeech',
+        'sounddevice',
+        'numpy',
+        'whisper',
+        'pydub',
+        'asyncio',
+        'aiohttp',
+        'sqlite-utils'
     ],
     entry_points='''
         [console_scripts]
@@ -299,33 +705,37 @@ setup(
 )
 ```
 
-### 4. Install the CLI
-```bash
-pip install -e .
-```
+---
 
-## Usage Examples
-
-Once set up, you can use the CLI:
+## ✅ Sample Commands
 
 ```bash
-# Ask Rin a question
-rin ask "What's the weather today?"
+# Ask a question via text
+rin ask "What's the weather like in Bogotá?"
 
-# View interaction history
+# Listen for a voice command
+rin listen
+
+# Replay conversation history
 rin remember
 
-# Convert text to speech
-rin speak "Hello, I am Rin, your personal assistant."
+# Speak text aloud
+rin speak "Hello, I am Rin."
 ```
 
-## Next Steps
+---
 
-This basic CLI and storage implementation provides the foundation for testing the core functionality before implementing more complex features. Here are some potential enhancements:
+## 🚧 Next Steps (V0.x → V1)
 
-1. Add LangChain integration for more advanced LLM capabilities
-2. Implement local models using Ollama for offline operation
-3. Add context management for multi-turn conversations
-4. Integrate speech recognition for voice input
+- Enhance Whisper STT with streaming capabilities
+- Add wake word detection via `openWakeWord` or `Porcupine`
+- Implement Coqui TTS as a local offline alternative
+- Create a simple GUI using Tauri or similar framework
+- Expand memory with LLM context injection
+- Implement better error recovery and retry mechanisms
+- Add unit and integration tests
 
-This Python-based implementation offers better scalability and integration with the AI ecosystem as we move toward more advanced features in future versions.
+This enhanced step gives you a more future-proof, modular AI assistant with better scalability, error handling, and cross-platform support.
+
+---
+
