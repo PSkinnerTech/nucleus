@@ -1,0 +1,843 @@
+---
+title: "V0 Extended Features Rules"
+navOrder: 2
+---
+
+# Rin V0 Extended Features Rules
+
+This page contains all the Cursor rules you need to implement the Extended Features for Rin V0 as outlined in the [Extended Features Guide](/v0/rin-v0-extended-features-guide) guide.
+
+## Setting Up Cursor Rules
+
+To use these rules in your project, follow these steps:
+
+1. Create a rules directory in your project:
+```bash
+mkdir -p .cursor/rules
+```
+
+2. For each rule below, create a corresponding <code>.cursorignore</code> file in the <code>.cursor/rules</code> directory with the rule content.
+
+For example, to set up the List Storage rule:
+```bash
+# Copy the List Storage rule content
+# Create the rule file
+touch .cursor/rules/Rin-v0-step2-lists.cursorignore
+# Paste the rule content into the file
+```
+
+3. You can now use these rules in Cursor to guide your development process. Cursor will automatically apply these rules when you work on relevant files.
+
+## Simple List Storage Rule
+
+This rule helps you implement the SQLite-based list storage system for managing basic lists like shopping lists and todo lists.
+
+<details>
+<summary>**Click to see the complete List Storage rule**</summary>
+
+```
+# Rin V0 List Storage Rule
+# This rule helps with implementing the SQLite-based list storage system
+
+# Define which files this rule applies to
+*.py
+rin/lists.py
+rin/cli.py
+rin/core.py
+
+# Rule content below
+When helping with the Rin V0 list storage implementation:
+
+1. Data Storage Guidelines:
+   - Use SQLite via aiosqlite for async database operations
+   - Create a ListManager class with a clean interface
+   - Maintain a single database file (rin.db) in the user's RIN_DIR
+   - Store list data in a table with proper schema
+   - Store list items as a JSON string in a TEXT column
+   - Use proper asyncio patterns for database operations
+   - Implement proper error handling for all database operations
+   - Ensure lists have unique names with UNIQUE constraint
+
+2. Core List Operations:
+   - Create list (with optional initial items)
+   - Get all available lists
+   - Get items in a specific list
+   - Add item to a list
+   - Remove item from a list
+   - Delete entire list
+   - All operations must be asynchronous
+   - Return meaningful success/failure indicators
+   - Implement proper error handling and logging
+
+3. Command Line Interface:
+   - Implement a click group called "list_cmd" (to avoid conflict with Python's list type)
+   - Add subcommands for all core operations
+   - Provide helpful error messages and feedback
+   - Show list contents in a numbered format
+   - Implement proper argument validation
+   - Use appropriate Click decorators for arguments
+   - Handle exceptions gracefully
+
+4. Natural Language Processing:
+   - Add a handle_list_command method to the Assistant class
+   - Use regex pattern matching to identify list-related commands
+   - Extract list names and item content using helper functions
+   - Implement parsing for various command forms: create, show, add, remove, delete
+   - Return None for non-list commands (to fall back to other handlers)
+   - Provide natural conversational responses
+   - Handle ambiguity with follow-up questions
+
+5. Modular Implementation:
+   - Keep list functionality in a separate module (rin/lists.py)
+   - Use a clear, consistent async interface
+   - Add proper type hints and docstrings
+   - Include comprehensive logging
+   - Follow PEP 8 guidelines
+   - Use consistent naming conventions
+   - Implement proper exception handling
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**List Manager (rin/lists.py)**</summary>
+
+```python
+# rin/lists.py
+import json
+import aiosqlite
+import asyncio
+import logging
+from pathlib import Path
+from rin.config import RIN_DIR
+from rin.logging_config import loggers
+import datetime
+
+logger = loggers.get('core', logging.getLogger('rin.lists'))
+
+class ListManager:
+    """SQLite-based list manager using aiosqlite"""
+    
+    def __init__(self):
+        self.db_path = RIN_DIR / "rin.db" # Use the main database file
+        logger.info(f"List Manager initialized, using DB at {self.db_path}")
+    
+    async def _init_db(self):
+        """Ensure the lists table exists"""
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute('''
+                CREATE TABLE IF NOT EXISTS lists (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    items TEXT NOT NULL, -- Store items as JSON string
+                    created_at TEXT NOT NULL,
+                    UNIQUE(name)
+                )
+            ''')
+            await db.commit()
+    
+    async def get_lists(self):
+        """Get all available list names"""
+        await self._init_db()
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute('SELECT name FROM lists')
+            rows = await cursor.fetchall()
+            return [row[0] for row in rows]
+    
+    async def create_list(self, name, items=None):
+        """Create a new list with optional initial items"""
+        await self._init_db()
+        if items is None:
+            items = []
+        
+        items_json = json.dumps(items)
+        created_at = str(datetime.datetime.now())
+        
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    'INSERT INTO lists (name, items, created_at) VALUES (?, ?, ?)',
+                    (name, items_json, created_at)
+                )
+                await db.commit()
+            logger.info(f"Created list '{name}' with {len(items)} items")
+            return True
+        except aiosqlite.IntegrityError:
+            logger.warning(f"List '{name}' already exists")
+            return False
+        except Exception as e:
+            logger.error(f"Error creating list '{name}': {str(e)}")
+            return False
+    
+    # Other methods (get_list, add_item, remove_item, delete_list)
+```
+
+</details>
+
+## Local Timer/Reminder Rule
+
+This rule helps you implement the timer and reminder system with SQLite storage and cross-platform notifications.
+
+<details>
+<summary>**Click to see the complete Timer/Reminder rule**</summary>
+
+```
+# Rin V0 Timer/Reminder Rule
+# This rule helps with implementing the async timer/reminder system using SQLite and Plyer
+
+# Define which files this rule applies to
+*.py
+rin/reminders.py
+rin/cli.py
+rin/core.py
+
+# Rule content below
+When helping with the Rin V0 timer/reminder implementation:
+
+1. Data Storage Guidelines:
+   - Use SQLite via aiosqlite for storing reminders
+   - Implement a ReminderManager class with async methods
+   - Create a dedicated reminders table in the main database
+   - Store both timers and reminders in the same table with a type field
+   - Use ISO format for date/time storage
+   - Use a string ID format that identifies the timer/reminder type
+   - Create an index on the due_time column for performance
+   - Track completion status for reminders (0/1)
+
+2. Async Task Management:
+   - Load existing reminders from database on startup
+   - Schedule active reminders via asyncio tasks
+   - Store task references in a dictionary to prevent garbage collection
+   - Use asyncio.create_task for background operations
+   - Implement proper cancellation handling
+   - Validate reminders that may have expired during downtime
+   - Ensure atomic operations to prevent duplicate notifications
+
+3. Notification System:
+   - Use Plyer for cross-platform notifications
+   - Implement TTS output for audio notification
+   - Fall back to console output if Plyer fails
+   - Implement sound playback using sounddevice
+   - Mark reminders as completed after notification
+   - Provide adequate error handling
+   - Support both system and audio notifications
+
+4. Command Line Interface:
+   - Create a "reminder" command group
+   - Implement timer command for duration-based alerts
+   - Implement set command for specific time reminders
+   - Support flexible time formats using dateutil.parser
+   - Format dates and times in user-friendly formats
+   - Implement list command to show all active reminders
+   - Support cancellation by ID
+
+5. Natural Language Processing:
+   - Add handle_reminder_command method to the Assistant class
+   - Parse time expressions for specific times
+   - Parse duration expressions (minutes, hours)
+   - Extract descriptions from commands
+   - Support querying active reminders
+   - Support cancelling reminders by description or ID
+   - Format times in natural language responses
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**Reminder Manager (rin/reminders.py)**</summary>
+
+```python
+# rin/reminders.py
+import json
+import aiosqlite
+import asyncio
+import datetime
+import platform
+import logging
+import time
+from pathlib import Path
+from plyer import notification # Use Plyer for notifications
+from rin.config import RIN_DIR
+from rin.logging_config import loggers
+from rin.tts import TTSInterface
+
+logger = loggers.get('core', logging.getLogger('rin.reminders'))
+
+class ReminderManager:
+    """Manages timers and reminders using SQLite and Plyer"""
+    
+    def __init__(self):
+        self.db_path = RIN_DIR / "rin.db"
+        self.tasks = {}  # Track running asyncio tasks
+        self.tts = TTSInterface.create()
+        logger.info(f"Reminder Manager initialized, using DB at {self.db_path}")
+        
+        # Load existing reminders asynchronously in the background
+        asyncio.create_task(self._load_reminders())
+    
+    async def _init_db(self):
+        """Ensure the reminders table exists"""
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute('''
+                CREATE TABLE IF NOT EXISTS reminders (
+                    id TEXT PRIMARY KEY, -- Use string ID for simplicity
+                    type TEXT NOT NULL, -- 'timer' or 'reminder'
+                    description TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    due_time TEXT NOT NULL,
+                    duration_seconds INTEGER, -- Only for timers
+                    completed INTEGER DEFAULT 0
+                )
+            ''')
+            await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_due ON reminders (due_time)')
+            await db.commit()
+    
+    # Other methods (set_timer, set_reminder, cancel_reminder, etc.)
+```
+
+</details>
+
+## Web Search + Summary Rule
+
+This rule helps you implement the web search functionality with provider abstraction and LLM-powered summarization.
+
+<details>
+<summary>**Click to see the complete Web Search rule**</summary>
+
+```
+# Rin V0 Web Search Rule
+# This rule helps with implementing the web search and summarization system
+
+# Define which files this rule applies to
+*.py
+rin/search.py
+rin/cli.py
+rin/core.py
+rin/config.py
+
+# Rule content below
+When helping with the Rin V0 web search implementation:
+
+1. Provider Abstraction:
+   - Create an abstract SearchProvider base class with an async search method
+   - Implement SerpAPISearch as the primary provider
+   - Create a factory function to instantiate providers based on configuration
+   - Support a fallback placeholder for when API keys are missing
+   - Allow configuration via environment variables
+   - Implement proper error handling for API failures
+   - Ensure all network operations are asynchronous
+   - Use aiohttp for HTTP requests
+
+2. Web Search Manager:
+   - Create a WebSearchManager class that uses the provider abstraction
+   - Implement search_and_summarize method for LLM-enhanced results
+   - Implement raw_search for basic results without summarization
+   - Structure search results consistently with title, link, snippet
+   - Format results for LLM summarization
+   - Ensure proper error handling with meaningful error responses
+   - Use LLMInterface for summarization
+
+3. Configuration Management:
+   - Add SERPAPI_KEY to configuration
+   - Add SEARCH_PROVIDER setting with sensible default
+   - Update .env file template
+   - Use consistent config access patterns
+   - Provide helpful error messages for missing credentials
+
+4. Command Line Interface:
+   - Add search command to CLI
+   - Support query as positional argument
+   - Add options for summary vs. raw results
+   - Support configurable number of results
+   - Format output in a readable way
+   - Display source links
+   - Show errors clearly
+
+5. Natural Language Processing:
+   - Add handle_search_command method to Assistant class
+   - Use regex patterns to identify search queries
+   - Support various query forms (search for, tell me about, etc.)
+   - Extract the actual search query from the command
+   - Format responses in a conversational way
+   - Ensure proper error handling
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**Search Provider (rin/search.py)**</summary>
+
+```python
+# rin/search.py
+import os
+import json
+import aiohttp
+import logging
+import urllib.parse
+from abc import ABC, abstractmethod
+from rin.config import SERPAPI_KEY, SEARCH_PROVIDER
+from rin.logging_config import loggers
+from rin.llm import LLMInterface
+
+logger = loggers.get('core', logging.getLogger('rin.search'))
+
+# --- Search Provider Abstraction ---
+
+class SearchProvider(ABC):
+    """Abstract base class for search providers."""
+    @abstractmethod
+    async def search(self, query, num_results=5):
+        """Perform search and return structured results or error dict."""
+        pass
+
+class SerpAPISearch(SearchProvider):
+    """Search provider using SerpAPI."""
+    def __init__(self):
+        self.api_key = os.getenv("SERPAPI_KEY")
+        if not self.api_key:
+            raise ValueError("SERPAPI_KEY not found in environment variables.")
+        logger.info("Initialized SerpAPISearch provider.")
+
+    async def search(self, query, num_results=5):
+        encoded_query = urllib.parse.quote(query)
+        url = f"https://serpapi.com/search.json?q={encoded_query}&num={num_results}&api_key={self.api_key}"
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Error from SerpAPI ({response.status}): {error_text}")
+                        return {"error": f"Search API error: {response.status}"}
+                    
+                    data = await response.json()
+                    
+                    # Basic result parsing
+                    if "organic_results" not in data or not data["organic_results"]:
+                        return {"results": []} # Return empty list if no organic results
+                        
+                    results = []
+                    for res in data["organic_results"][:num_results]:
+                         results.append({
+                            "title": res.get("title", "No title"),
+                            "link": res.get("link", "#"),
+                            "snippet": res.get("snippet", "No description available.")
+                        })
+                    return {"results": results}
+                    
+        except Exception as e:
+            logger.error(f"Error during SerpAPI search: {str(e)}", exc_info=True)
+            return {"error": f"Failed to execute search: {str(e)}"}
+
+# More classes and methods (WebSearchManager, etc.)
+```
+
+</details>
+
+## Telegram Echo Bot Rule
+
+This rule helps you implement the Telegram Bot integration to extend Rin's reach beyond the command line.
+
+<details>
+<summary>**Click to see the complete Telegram Bot rule**</summary>
+
+```
+# Rin V0 Telegram Bot Rule
+# This rule helps with implementing the Telegram bot integration
+
+# Define which files this rule applies to
+*.py
+rin/telegram_bot.py
+rin/cli.py
+rin/config.py
+
+# Rule content below
+When helping with the Rin V0 Telegram bot implementation:
+
+1. Telegram Bot Setup:
+   - Use python-telegram-bot library (v20+)
+   - Create a RinTelegramBot class for integration
+   - Read token from TELEGRAM_BOT_TOKEN environment variable
+   - Add token to config with appropriate placeholders
+   - Properly handle missing token cases
+   - Create an instance of Assistant for query processing
+   - Initialize bot with error handling
+
+2. Command Handlers:
+   - Implement /start command handler
+   - Implement /help command handler
+   - Create general message handler for all text messages
+   - Use async pattern for all handlers
+   - Support markdown formatting in responses
+   - Show typing indicator during processing
+   - Add proper error handling
+
+3. Assistant Integration:
+   - Process incoming messages via Assistant.process_query
+   - Extract text response from result dictionary
+   - Ensure proper error handling if Assistant fails
+   - Log all incoming messages and responses
+   - Pass user ID along with messages for future personalization
+
+4. Command Line Interface:
+   - Add telegram command to CLI
+   - Run the bot until terminated (KeyboardInterrupt)
+   - Show startup/shutdown messages
+   - Handle interruption gracefully
+   - Provide clear error messages
+
+5. Documentation:
+   - Include usage instructions in docstrings
+   - Explain how to create a bot with @BotFather
+   - Document environment variable requirements
+   - Explain bot commands and capabilities
+   - Include sample commands
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**Telegram Bot (rin/telegram_bot.py)**</summary>
+
+```python
+# rin/telegram_bot.py
+import os
+import asyncio
+import logging
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+from rin.core import Assistant
+from rin.config import TELEGRAM_BOT_TOKEN
+from rin.logging_config import loggers
+
+logger = loggers.get('core', logging.getLogger('rin.telegram'))
+
+class RinTelegramBot:
+    """Telegram bot integration for Rin"""
+    
+    def __init__(self):
+        self.token = os.getenv("TELEGRAM_BOT_TOKEN")
+        if not self.token:
+            logger.warning("TELEGRAM_BOT_TOKEN not found. Telegram bot functionality disabled.")
+            return
+        
+        self.assistant = Assistant()
+        logger.info("Telegram Bot initialized")
+    
+    async def start(self):
+        """Start the Telegram bot"""
+        if not self.token:
+            logger.error("Cannot start Telegram bot: No token provided")
+            return False
+        
+        try:
+            # Create the application
+            application = ApplicationBuilder().token(self.token).build()
+            
+            # Add handlers
+            application.add_handler(CommandHandler("start", self.start_command))
+            application.add_handler(CommandHandler("help", self.help_command))
+            application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+            
+            # Start the bot
+            await application.initialize()
+            await application.start()
+            await application.run_polling()
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error starting Telegram bot: {str(e)}")
+            return False
+    
+    # Command handlers (start_command, help_command, handle_message)
+```
+
+</details>
+
+## Email Draft Creator Rule
+
+This rule helps you implement the email draft creation system using LLM and SQLite storage.
+
+<details>
+<summary>**Click to see the complete Email Draft rule**</summary>
+
+```
+# Rin V0 Email Draft Rule
+# This rule helps with implementing the email draft creation system
+
+# Define which files this rule applies to
+*.py
+rin/email_drafts.py
+rin/cli.py
+rin/core.py
+
+# Rule content below
+When helping with the Rin V0 email draft implementation:
+
+1. Data Storage Guidelines:
+   - Use SQLite via aiosqlite for storing email drafts
+   - Create an EmailDraftCreator class with async methods
+   - Create email_drafts table with appropriate schema
+   - Store all relevant email metadata and content
+   - Use a unique string ID format with timestamp
+   - Store creation timestamp for sorting
+   - Store original prompt for reference
+   - Use proper asyncio patterns for database operations
+
+2. Email Generation:
+   - Use LLMInterface to generate email content
+   - Support different tones (professional, friendly, formal, etc.)
+   - Structure prompts to get well-formatted emails
+   - Keep from/to/subject out of the email body
+   - Include proper paragraphs and formatting
+   - Include proper greeting and signature
+   - Ensure proper error handling during generation
+
+3. Draft Management:
+   - Create drafts with recipient, subject, content
+   - List all saved drafts with metadata
+   - Get a specific draft by ID
+   - Delete drafts by ID
+   - Format dates and times in user-friendly way
+   - Implement proper error handling
+   - Return meaningful success/failure indicators
+
+4. Command Line Interface:
+   - Create an "email" command group
+   - Implement draft command for creating emails
+   - Support --to, --subject, and --tone options
+   - Implement list command to show all drafts
+   - Implement show command to view a specific draft
+   - Implement delete command to remove drafts
+   - Format output for readability
+
+5. Natural Language Processing:
+   - Add handle_email_command method to Assistant class
+   - Parse email creation requests with regex
+   - Extract recipient, subject, and tone information
+   - Support listing drafts via natural language
+   - Format email responses conversationally
+   - Return the generated email content
+   - Include draft ID in responses
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**Email Draft Creator (rin/email_drafts.py)**</summary>
+
+```python
+# rin/email_drafts.py
+import os
+import json
+import aiosqlite
+import asyncio
+import datetime
+import logging
+from pathlib import Path
+from rin.config import RIN_DIR
+from rin.logging_config import loggers
+from rin.llm import LLMInterface
+
+logger = loggers.get('core', logging.getLogger('rin.email'))
+
+class EmailDraftCreator:
+    """Create and manage email drafts using SQLite"""
+    
+    def __init__(self):
+        self.db_path = RIN_DIR / "rin.db"
+        self.llm = LLMInterface.create()
+        logger.info(f"Email Draft Creator initialized, using DB at {self.db_path}")
+
+    async def _init_db(self):
+        """Ensure the email_drafts table exists"""
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute('''
+                CREATE TABLE IF NOT EXISTS email_drafts (
+                    id TEXT PRIMARY KEY,
+                    recipient TEXT NOT NULL,
+                    subject TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    tone TEXT,
+                    prompt TEXT
+                )
+            ''')
+            await db.commit()
+    
+    # Other methods (create_draft, get_drafts, get_draft, delete_draft, _generate_email_content)
+```
+
+</details>
+
+## Refactoring Recommendations Rule
+
+This rule provides guidance on improving the codebase with better architecture, modular design, and future-proofing.
+
+<details>
+<summary>**Click to see the complete Refactoring rule**</summary>
+
+```
+# Rin V0 Refactoring Recommendations Rule
+# This rule provides guidance on improvements for a more robust implementation
+
+# Define which files this rule applies to
+*.py
+rin/*.py
+tests/*.py
+pyproject.toml
+setup.py
+
+# Rule content below
+When helping with Rin V0 refactoring:
+
+1. Package & Dependency Improvements:
+   - Replace setup.py with pyproject.toml
+   - Consider Poetry or Hatch for dependency management
+   - Create clean abstraction interfaces for external services
+   - Make all provider implementations interchangeable
+   - Ensure SQLite is used consistently for all persistent storage
+   - Standardize error handling and response formats
+   - Use abstract base classes and dependency injection
+
+2. Async Architecture Improvements:
+   - Ensure all I/O operations are non-blocking
+   - Use asyncio.create_task for background operations
+   - Implement proper task tracking and cleanup
+   - Use loop.run_in_executor for CPU-bound operations
+   - Handle task cancellation gracefully
+   - Implement proper error propagation
+   - Use async context managers consistently
+
+3. Modular Skills Architecture:
+   - Create a skills/ directory with modular capabilities
+   - Implement a Skill base class with can_handle and handle methods
+   - Convert existing handlers to skill implementations
+   - Update process_query to try each skill in sequence
+   - Fall back to general LLM for unhandled queries
+   - Make skills easily discoverable and extensible
+   - Support skill prioritization
+
+4. Cross-Platform Enhancements:
+   - Use Plyer for notifications on all platforms
+   - Implement audio playback with fallbacks
+   - Standardize path handling
+   - Make all features work on Windows, macOS, and Linux
+   - Add platform-specific optimizations when needed
+   - Test on multiple platforms
+
+5. Vendor Lock-In Prevention:
+   - Abstract all external API providers
+   - Create factory functions based on configuration
+   - Support open-source alternatives to proprietary services
+   - Add local Ollama support as LLM alternative
+   - Consider self-hosted alternatives for search
+   - Make all components replaceable
+   - Implement graceful degradation
+
+6. Developer Quality-of-Life:
+   - Add type hints throughout the codebase
+   - Create unit tests for core components
+   - Implement continuous integration
+   - Add comprehensive docstrings
+   - Create developer documentation
+   - Implement logging throughout
+   - Set up pre-commit hooks for linting and formatting
+```
+
+</details>
+
+### Implementation Example
+
+<details>
+<summary>**Modular Skills Architecture**</summary>
+
+```python
+# rin/skills/base.py
+from abc import ABC, abstractmethod
+import logging
+from rin.logging_config import loggers
+
+logger = loggers.get('skills', logging.getLogger('rin.skills'))
+
+class Skill(ABC):
+    """Base class for assistant skills"""
+    
+    @abstractmethod
+    async def can_handle(self, query):
+        """Return True if this skill can handle the query"""
+        pass
+        
+    @abstractmethod
+    async def handle(self, query):
+        """Process query and return response"""
+        pass
+
+# rin/skills/list_skill.py
+import re
+from rin.skills.base import Skill
+from rin.lists import ListManager
+
+class ListSkill(Skill):
+    """Skill for handling list-related queries"""
+    
+    async def can_handle(self, query):
+        """Check if query is list-related"""
+        query = query.lower()
+        list_indicators = [
+            "list", "shopping list", "todo list", 
+            "create a list", "show my lists", "add to list"
+        ]
+        return any(indicator in query for indicator in list_indicators)
+        
+    async def handle(self, query):
+        """Handle list-related queries"""
+        # Implementation from handle_list_command in core.py
+        # ...
+
+# rin/core.py
+async def process_query(self, query, respond_with_voice=False):
+    """Process with modular skills architecture"""
+    # Try each skill until one can handle it
+    for skill in self.skills:
+        if await skill.can_handle(query):
+            response = await skill.handle(query)
+            if response:
+                return await self._format_response(response, respond_with_voice)
+
+    # Fall back to general LLM if no skill matches
+    logger.info("No specific skill handled the query, falling back to LLM.")
+    response = await self.llm.generate_response(query)
+    await self.storage.save_interaction(query, response)
+    return await self._format_response(response, respond_with_voice)
+```
+
+</details>
+
+## How to Use These Rules
+
+1. **Copy the rule content**: Click on the dropdown for the specific rule you need
+2. **Create a file**: In your project, create a file at <code>.cursor/rules/Rin-v0-step2-[component].cursorignore</code>
+3. **Paste the rule**: Paste the copied content into the file
+4. **Start developing**: As you work on the component, Cursor will provide guidance based on the rule
+
+You can also chain rules together using the <code>@file</code> reference system:
+
+```
+# In other rules, include step 1 rules for context
+@file:.cursor/rules/Rin-v0-step1-setup.cursorignore
+
+# Additional rule content below
+```
+
+These rules are designed to work together to help you implement the extended features of Rin V0, building on the foundation established in Step 1. The rules provide guidance on creating a robust, maintainable system with proper async patterns, error handling, and a path toward future enhancements.

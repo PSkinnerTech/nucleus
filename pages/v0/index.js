@@ -11,12 +11,12 @@ export const v0Meta = {
       path: "v0-roadmap"
     },
     {
-      title: "Step 1: Developer and Testing",
-      path: "developer-and-testing"
+      title: "Core Implementation Guide",
+      path: "rin-v0-core-implementation-guide"
     },
     {
-      title: "Step 2: Voice and Interaction",
-      path: "voice-and-interaction"
+      title: "Extended Features Guide",
+      path: "rin-v0-extended-features-guide"
     }
   ]
 };
