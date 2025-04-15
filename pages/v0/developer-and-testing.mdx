@@ -10,15 +10,15 @@ This guide provides a step-by-step approach to building the foundational develop
 
 Before you begin, ensure you have the following prerequisites installed and set up:
 
-1. **Node.js and npm**: Ensure Node.js is installed on your system. npm (Node Package Manager) will be used to install necessary packages.
+1. **Python**: Ensure Python 3.9+ is installed on your system. We'll use pip for package management.
 
-2. **Code Editor**: A code editor such as Visual Studio Code, Sublime Text, or any other editor of your choice for writing and editing your code.
+2. **Code Editor**: A code editor such as Visual Studio Code, PyCharm, or any other editor of your choice for writing and editing your code.
 
 3. **API Keys**:
    - **OpenAI API Key**: Required for interacting with OpenAI's models.
    - **Google Cloud Credentials**: Needed for using Google Cloud Text-to-Speech. Ensure you have downloaded the JSON credentials file after setting up a Google Cloud project.
 
-4. **SQLite**: The local storage for interactions is handled using SQLite, a lightweight database. Ensure you have the necessary tools or libraries installed to interact with SQLite databases.
+4. **Virtual Environment**: Knowledge of Python virtual environments to isolate dependencies.
 
 5. **Command Line Tools**: Familiarity with command line operations is necessary as the setup involves running shell commands.
 
@@ -32,205 +32,276 @@ Once you have all the prerequisites set up, you can proceed with the following s
 
 ### 1. Create Basic Project Structure
 ```bash
-mkdir -p rin-cli/src
+mkdir -p rin-cli
 cd rin-cli
-npm init -y
-npm install commander dotenv axios openai sqlite3 @google-cloud/text-to-speech
-touch .env src/index.js src/storage.js
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install required packages
+pip install click python-dotenv openai langchain google-cloud-texttospeech pydantic
+touch .env
+mkdir rin
+touch rin/__init__.py rin/cli.py rin/storage.py rin/llm.py rin/tts.py
 ```
 
 ### 2. Configure Environment
 ```env
 # .env
 OPENAI_API_KEY=your_openai_key
-GOOGLE_CLOUD_CREDENTIALS=/path/to/your/google-credentials.json
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/google-credentials.json
 ```
 
 ### 3. Build CLI Entry Point
-```javascript
-#!/usr/bin/env node
+```python
+# rin/cli.py
+import os
+import click
+from dotenv import load_dotenv
+from pathlib import Path
+import json
 
-// src/index.js
-require('dotenv').config();
-const { program } = require('commander');
-const storage = require('./storage');
-const OpenAI = require('openai');
-const textToSpeech = require('@google-cloud/text-to-speech');
-const fs = require('fs');
-const path = require('path');
- 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
- 
-// Initialize Google Cloud TTS
-const ttsClient = new textToSpeech.TextToSpeechClient({
-  keyFilename: process.env.GOOGLE_CLOUD_CREDENTIALS
-});
- 
-// Initialize storage
-storage.init();
- 
-program
-  .name('rin')
-  .description('Rin CLI - Personal Assistant Prototype')
-  .version('0.0.1');
- 
-program
-  .command('ask <query>')
-  .description('Ask Rin a question')
-  .action(async (query) => {
-    try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content: 'You are Rin, a helpful personal assistant.' },
-          { role: 'user', content: query }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      });
-      
-      const answer = response.choices[0].message.content;
-      console.log(`Rin: ${answer}`);
-      
-      // Store interaction in memory
-      await storage.saveInteraction(query, answer);
-    } catch (error) {
-      console.error('Error:', error.message);
-    }
-  });
- 
-program
-  .command('remember')
-  .description('Show past interactions')
-  .action(async () => {
-    try {
-      const interactions = await storage.getInteractions();
-      if (interactions.length === 0) {
-        console.log('No past interactions found.');
-        return;
-      }
-      
-      console.log('Past interactions:');
-      interactions.forEach((item, i) => {
-        console.log(`\n--- Interaction ${i+1} ---`);
-        console.log(`You: ${item.query}`);
-        console.log(`Rin: ${item.response}`);
-      });
-    } catch (error) {
-      console.error('Error retrieving interactions:', error.message);
-    }
-  });
- 
-program
-  .command('speak <text>')
-  .description('Convert text to speech using Google Cloud TTS')
-  .action(async (text) => {
-    try {
-      const request = {
-        input: { text: text },
-        voice: { languageCode: 'en-US', ssmlGender: 'NEUTRAL' },
-        audioConfig: { audioEncoding: 'MP3' },
-      };
- 
-      const [response] = await ttsClient.synthesizeSpeech(request);
-      const outputFile = 'output.mp3';
-      fs.writeFileSync(outputFile, response.audioContent, 'binary');
-      console.log(`Audio content written to: ${outputFile}`);
-    } catch (error) {
-      console.error('Error:', error.message);
-    }
-  });
- 
-program.parse();
+from rin.storage import Storage
+from rin.llm import OpenAIClient
+from rin.tts import TextToSpeech
+
+# Load environment variables
+load_dotenv()
+
+# Initialize components
+storage = Storage()
+llm_client = OpenAIClient()
+tts_client = TextToSpeech()
+
+@click.group()
+def cli():
+    """Rin CLI - Personal Assistant Prototype"""
+    pass
+
+@cli.command()
+@click.argument('query')
+def ask(query):
+    """Ask Rin a question"""
+    try:
+        # Get response from LLM
+        response = llm_client.generate_response(query)
+        click.echo(f"Rin: {response}")
+        
+        # Store interaction in memory
+        storage.save_interaction(query, response)
+    except Exception as e:
+        click.echo(f"Error: {str(e)}")
+
+@cli.command()
+def remember():
+    """Show past interactions"""
+    try:
+        interactions = storage.get_interactions()
+        if not interactions:
+            click.echo("No past interactions found.")
+            return
+        
+        click.echo("Past interactions:")
+        for i, item in enumerate(interactions):
+            click.echo(f"\n--- Interaction {i+1} ---")
+            click.echo(f"You: {item['query']}")
+            click.echo(f"Rin: {item['response']}")
+    except Exception as e:
+        click.echo(f"Error retrieving interactions: {str(e)}")
+
+@cli.command()
+@click.argument('text')
+def speak(text):
+    """Convert text to speech using Google Cloud TTS"""
+    try:
+        output_file = "output.mp3"
+        tts_client.synthesize_speech(text, output_file)
+        click.echo(f"Audio content written to: {output_file}")
+    except Exception as e:
+        click.echo(f"Error: {str(e)}")
+
+if __name__ == '__main__':
+    cli()
+```
+
+### 4. Implement LLM Client
+
+```python
+# rin/llm.py
+import os
+import openai
+
+class OpenAIClient:
+    def __init__(self):
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        if not openai.api_key:
+            raise ValueError("OpenAI API key not found. Please set OPENAI_API_KEY environment variable.")
+    
+    def generate_response(self, query, model="gpt-4"):
+        """Generate a response from OpenAI models"""
+        try:
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are Rin, a helpful personal assistant."},
+                    {"role": "user", "content": query}
+                ],
+                temperature=0.7,
+                max_tokens=500
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            raise Exception(f"Error calling OpenAI API: {str(e)}")
+```
+
+### 5. Implement TTS Client
+
+```python
+# rin/tts.py
+import os
+from google.cloud import texttospeech
+
+class TextToSpeech:
+    def __init__(self):
+        # Google Cloud TTS client will look for GOOGLE_APPLICATION_CREDENTIALS env var
+        if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+            raise ValueError("Google Cloud credentials not found. Please set GOOGLE_APPLICATION_CREDENTIALS environment variable.")
+        
+        self.client = texttospeech.TextToSpeechClient()
+    
+    def synthesize_speech(self, text, output_file="output.mp3"):
+        """Convert text to speech and save to a file"""
+        try:
+            synthesis_input = texttospeech.SynthesisInput(text=text)
+            
+            voice = texttospeech.VoiceSelectionParams(
+                language_code="en-US",
+                ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+            )
+            
+            audio_config = texttospeech.AudioConfig(
+                audio_encoding=texttospeech.AudioEncoding.MP3
+            )
+            
+            response = self.client.synthesize_speech(
+                input=synthesis_input, voice=voice, audio_config=audio_config
+            )
+            
+            with open(output_file, "wb") as out:
+                out.write(response.audio_content)
+                
+            return output_file
+        except Exception as e:
+            raise Exception(f"Error synthesizing speech: {str(e)}")
 ```
 
 ## Local Memory Implementation
 
 ### 1. Create SQLite-based Storage
-```javascript
-// src/storage.js
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
- 
-// Ensure data directory exists
-const dataDir = path.join(process.env.HOME || process.env.USERPROFILE, '.rin');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir);
-}
- 
-const dbPath = path.join(dataDir, 'rin.db');
-let db;
- 
-function init() {
-  db = new sqlite3.Database(dbPath);
-  
-  // Create tables if they don't exist
-  db.serialize(() => {
-    db.run(`
-      CREATE TABLE IF NOT EXISTS interactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        query TEXT,
-        response TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-  });
-  
-  console.log(`Local memory initialized at ${dbPath}`);
-}
- 
-function saveInteraction(query, response) {
-  return new Promise((resolve, reject) => {
-    db.run(
-      'INSERT INTO interactions (query, response) VALUES (?, ?)',
-      [query, response],
-      function(err) {
-        if (err) return reject(err);
-        resolve(this.lastID);
-      }
-    );
-  });
-}
- 
-function getInteractions(limit = 10) {
-  return new Promise((resolve, reject) => {
-    db.all(
-      'SELECT * FROM interactions ORDER BY timestamp DESC LIMIT ?',
-      [limit],
-      (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows);
-      }
-    );
-  });
-}
- 
-module.exports = { init, saveInteraction, getInteractions };
+```python
+# rin/storage.py
+import sqlite3
+import os
+import json
+from pathlib import Path
+from datetime import datetime
+
+class Storage:
+    def __init__(self):
+        # Create data directory in user's home if it doesn't exist
+        data_dir = Path.home() / ".rin"
+        data_dir.mkdir(exist_ok=True)
+        
+        # Set up the database
+        self.db_path = data_dir / "rin.db"
+        self.conn = sqlite3.connect(str(self.db_path))
+        self.init_db()
+        
+        print(f"Local memory initialized at {self.db_path}")
+    
+    def init_db(self):
+        """Initialize the database tables"""
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS interactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                query TEXT,
+                response TEXT,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        self.conn.commit()
+    
+    def save_interaction(self, query, response):
+        """Store an interaction in the database"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "INSERT INTO interactions (query, response) VALUES (?, ?)",
+            (query, response)
+        )
+        self.conn.commit()
+        return cursor.lastrowid
+    
+    def get_interactions(self, limit=10):
+        """Retrieve recent interactions from the database"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT id, query, response, timestamp FROM interactions ORDER BY timestamp DESC LIMIT ?",
+            (limit,)
+        )
+        rows = cursor.fetchall()
+        
+        # Convert to list of dictionaries
+        interactions = []
+        for row in rows:
+            interactions.append({
+                "id": row[0],
+                "query": row[1],
+                "response": row[2],
+                "timestamp": row[3]
+            })
+        
+        return interactions
+    
+    def __del__(self):
+        """Ensure database connection is closed when the object is destroyed"""
+        if hasattr(self, 'conn'):
+            self.conn.close()
 ```
 
-### 2. Package Script Setup
-```json
-// package.json
-{
-  "scripts": {
-    "start": "node src/index.js"
-  },
-  "bin": {
-    "rin": "./src/index.js"
-  }
-}
+### 2. Create Package Setup
+```python
+# rin/__init__.py
+__version__ = "0.0.1"
 ```
 
-### 3. Make CLI Executable
+### 3. Create Setup File
+```python
+# setup.py (in root directory)
+from setuptools import setup, find_packages
+
+setup(
+    name="rin-cli",
+    version="0.0.1",
+    packages=find_packages(),
+    include_package_data=True,
+    install_requires=[
+        "click",
+        "python-dotenv",
+        "openai",
+        "langchain",
+        "google-cloud-texttospeech",
+        "pydantic",
+    ],
+    entry_points='''
+        [console_scripts]
+        rin=rin.cli:cli
+    ''',
+)
+```
+
+### 4. Install the CLI
 ```bash
-# Add shebang to index.js
-echo '#!/usr/bin/env node\n' | cat - src/index.js > temp && mv temp src/index.js
-chmod +x src/index.js
-npm link
+pip install -e .
 ```
 
 ## Usage Examples
@@ -243,6 +314,18 @@ rin ask "What's the weather today?"
 
 # View interaction history
 rin remember
+
+# Convert text to speech
+rin speak "Hello, I am Rin, your personal assistant."
 ```
 
-This basic CLI and storage implementation provides the foundation for testing the core functionality before implementing more complex features.
+## Next Steps
+
+This basic CLI and storage implementation provides the foundation for testing the core functionality before implementing more complex features. Here are some potential enhancements:
+
+1. Add LangChain integration for more advanced LLM capabilities
+2. Implement local models using Ollama for offline operation
+3. Add context management for multi-turn conversations
+4. Integrate speech recognition for voice input
+
+This Python-based implementation offers better scalability and integration with the AI ecosystem as we move toward more advanced features in future versions.

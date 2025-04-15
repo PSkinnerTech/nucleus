@@ -13,20 +13,20 @@ This roadmap outlines the minimal working features required to build a testable 
 ### 1. 🖥️ Developer & Testing Tools
 
 - **CLI interface**
-  - Establish a basic command-line environment for rapid iteration and testing.
+  - Establish a Python-based command-line environment for rapid iteration and testing.
 
 - **Local memory (JSON or SQLite)**
-  - Set up simple persistent storage for basic data retention.
+  - Set up simple persistent storage using Python's sqlite3 or json libraries for basic data retention.
 
 ---
 
 ### 2. 🧠 Core AI Functionality
 
-- **Static GPT-4 request**
-  - Integrate basic GPT-4 API calls for initial testing and responses.
+- **LLM integration**
+  - Integrate basic LLM API calls using OpenAI Python SDK or LangChain for initial testing and responses.
 
 - **One-shot command execution**
-  - Implement simple prompt-response interactions without memory or context.
+  - Implement simple prompt-response interactions without memory or context using FastAPI.
 
 - **Hardcoded personality prompt**
   - Define a single, consistent personality prompt for initial interactions.
@@ -36,10 +36,10 @@ This roadmap outlines the minimal working features required to build a testable 
 ### 3. 🗣️ Voice Interaction
 
 - **Push-to-talk or basic wake word**
-  - Enable basic interaction triggers via manual keypress or minimal wake word.
+  - Enable basic interaction triggers via manual keypress or minimal wake word using Python libraries.
 
 - **Basic STT (Speech-to-Text)**
-  - Integrate Whisper or Deepgram for reliable speech transcription.
+  - Integrate Whisper or Deepgram Python SDKs for reliable speech transcription.
 
 - **Basic TTS (Text-to-Speech)**
   - Implement Google Cloud TTS for natural-sounding responses, with plans for Coqui TTS offline fallback.
@@ -49,27 +49,27 @@ This roadmap outlines the minimal working features required to build a testable 
 ### 4. 📋 Basic Task Management
 
 - **Simple list storage (local)**
-  - Allow storing basic tasks or notes locally.
+  - Allow storing basic tasks or notes using Python data structures and local storage.
 
 - **Local timer/reminder**
-  - Enable basic alerts and reminders without external integrations.
+  - Enable basic alerts and reminders using Python's schedule or apscheduler libraries.
 
 ---
 
 ### 5. 🌐 Basic Web Interaction
 
 - **Web search + summary**
-  - Integrate SerpAPI or similar service to fetch and summarize web content.
+  - Integrate SerpAPI or LangChain search tools to fetch and summarize web content.
 
 ---
 
 ### 6. 💬 Communication Testing
 
 - **Telegram echo bot**
-  - Set up basic send/reply functionality via Telegram.
+  - Set up basic send/reply functionality via Telegram using the python-telegram-bot library.
 
 - **Fake email draft**
-  - Simulate email creation without actual sending logic.
+  - Simulate email creation without actual sending logic using Python objects.
 
 ---
 
@@ -80,6 +80,6 @@ By completing these features sequentially, we'll achieve:
 - A functional, testable prototype demonstrating core interaction patterns.
 - Basic voice-driven interactions and responses.
 - Simple task management and communication simulations.
-- A solid foundation for iterative development towards V1.
+- A solid Python-based foundation for iterative development towards V1.
 
 ---

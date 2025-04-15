@@ -164,20 +164,19 @@ GOOGLE_CLOUD_CREDENTIALS=/path/to/your/google-credentials.json
 
 ## CLI Development Rule
 
-This rule helps you build the CLI interface for the Rin V0 prototype using Commander.js.
+This rule helps you build the CLI interface for the Rin V0 prototype using Click.
 
 <details>
 <summary>**Click to see the complete CLI Development rule**</summary>
 
 ```
 # Rin V0 CLI Development Rule
-# This rule helps with implementing the CLI interface using Commander.js
+# This rule helps with implementing the CLI interface using Click
 
 # Define which files this rule applies to
-*.js
-src/index.js
-src/cli.js
-src/commands/*.js
+*.py
+rin/cli.py
+rin/commands/*.py
 
 # Include setup rule for context
 @file:.cursor/rules/Rin-v0-step1-setup.cursorignore
@@ -186,20 +185,19 @@ src/commands/*.js
 When helping with the Rin V0 CLI implementation:
 
 1. CLI Structure Guidelines:
-   - Use Commander.js for command line parsing and execution
+   - Use Click for command line parsing and execution
    - Implement the following commands:
      - ask: For asking Rin a question
      - remember: For viewing past interactions
      - speak: For text-to-speech conversion
    - Keep the CLI entry point clean and modular
    - Add proper descriptions for each command
-   - Include version information using package.json
+   - Include version information from package
 
 2. Command Implementation:
    - Each command should have:
      - A clear description
      - Proper argument and option handling
-     - Async execution where appropriate
      - Good error handling
      - Clear user feedback
    - For the 'ask' command:
@@ -216,30 +214,30 @@ When helping with the Rin V0 CLI implementation:
      - Provide output confirmation
 
 3. Error Handling:
-   - Handle API errors gracefully
+   - Use try/except blocks for error handling
    - Provide useful error messages
    - Check for missing credentials
    - Validate command inputs
-   - Include proper try/catch blocks
+   - Use custom exceptions for specific error cases
 
 4. User Experience:
-   - Add color coding for readability (consider chalk or colors)
-   - Include loading indicators for async operations
+   - Use click.echo for output formatting
+   - Include loading indicators for long operations
    - Format output for better readability
    - Set reasonable default values
    - Add help text and examples
 
 5. Code Organization:
+   - Use Python classes to structure commands
    - Separate concerns (API calls, command logic, output formatting)
    - Use proper function naming (action verbs for functions)
    - Keep functions focused and small
-   - Use ES modules or CommonJS consistently
    - Initialize required services before command execution
 
 6. CLI Entry Point:
-   - Include shebang line for executable
-   - Require dotenv configuration early
-   - Parse arguments correctly
+   - Use click.group() for command grouping
+   - Use click.command() decorators for subcommands
+   - Load environment variables early
    - Provide global help and version information
    - Handle keyboard interrupts gracefully
 ```
@@ -249,112 +247,92 @@ When helping with the Rin V0 CLI implementation:
 ### Implementation Example
 
 <details>
-<summary>**CLI Entry Point (src/index.js)**</summary>
+<summary>**CLI Entry Point (rin/cli.py)**</summary>
 
-```javascript
-#!/usr/bin/env node
-// src/index.js
-require('dotenv').config();
-const { program } = require('commander');
-const storage = require('./storage');
-const { Configuration, OpenAIApi } = require('openai');
-const textToSpeech = require('@google-cloud/text-to-speech');
+```python
+# rin/cli.py
+import os
+import click
+from dotenv import load_dotenv
+from pathlib import Path
+import json
 
-// Initialize OpenAI
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+from rin.storage import Storage
+from rin.llm import OpenAIClient
+from rin.tts import TextToSpeech
 
-// Initialize Google Cloud TTS
-const ttsClient = new textToSpeech.TextToSpeechClient();
+# Load environment variables
+load_dotenv()
 
-// Initialize storage
-storage.init();
+# Initialize components
+storage = Storage()
+llm_client = OpenAIClient()
+tts_client = TextToSpeech()
 
-program
-  .name('Rin')
-  .description('Rin CLI - Personal Assistant Prototype')
-  .version('0.0.1');
+@click.group()
+def cli():
+    """Rin CLI - Personal Assistant Prototype"""
+    pass
 
-program
-  .command('ask <query>')
-  .description('Ask Rin a question')
-  .action(async (query) => {
-    try {
-      console.log('Thinking...');
-      const response = await openai.createChatCompletion({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content: 'You are Rin, a helpful personal assistant.' },
-          { role: 'user', content: query }
-        ],
-      });
-      
-      const answer = response.data.choices[0].message.content;
-      console.log(`Rin: ${answer}`);
-      
-      // Store interaction in memory
-      await storage.saveInteraction(query, answer);
-    } catch (error) {
-      console.error('Error:', error.message);
-    }
-  });
+@cli.command()
+@click.argument('query')
+def ask(query):
+    """Ask Rin a question"""
+    try:
+        click.echo("Thinking...")
+        # Get response from LLM
+        response = llm_client.generate_response(query)
+        click.echo(f"Rin: {response}")
+        
+        # Store interaction in memory
+        storage.save_interaction(query, response)
+    except Exception as e:
+        click.echo(f"Error: {str(e)}")
 
-program
-  .command('remember')
-  .description('Show past interactions')
-  .option('-l, --limit <number>', 'Number of interactions to show', '10')
-  .action(async (options) => {
-    try {
-      const limit = parseInt(options.limit);
-      const interactions = await storage.getInteractions(limit);
-      
-      if (interactions.length === 0) {
-        console.log('No past interactions found.');
-        return;
-      }
-      
-      console.log('Past interactions:');
-      interactions.forEach((item, i) => {
-        console.log(`\n--- Interaction ${i+1} ---`);
-        console.log(`You: ${item.query}`);
-        console.log(`Rin: ${item.response}`);
-        console.log(`Time: ${new Date(item.timestamp).toLocaleString()}`);
-      });
-    } catch (error) {
-      console.error('Error retrieving interactions:', error.message);
-    }
-  });
+@cli.command()
+@click.option('--limit', '-l', default=10, help='Number of interactions to show')
+def remember(limit):
+    """Show past interactions"""
+    try:
+        interactions = storage.get_interactions(limit)
+        if not interactions:
+            click.echo("No past interactions found.")
+            return
+        
+        click.echo("Past interactions:")
+        for i, item in enumerate(interactions):
+            click.echo(f"\n--- Interaction {i+1} ---")
+            click.echo(f"You: {item['query']}")
+            click.echo(f"Rin: {item['response']}")
+            click.echo(f"Time: {item['timestamp']}")
+    except Exception as e:
+        click.echo(f"Error retrieving interactions: {str(e)}")
 
-program
-  .command('speak <text>')
-  .description('Convert text to speech using Google Cloud TTS')
-  .option('-o, --output <filename>', 'Output filename', 'output.mp3')
-  .option('-l, --language <code>', 'Language code', 'en-US')
-  .option('-g, --gender <gender>', 'Voice gender (MALE, FEMALE, NEUTRAL)', 'NEUTRAL')
-  .action(async (text, options) => {
-    try {
-      console.log('Converting text to speech...');
-      const request = {
-        input: { text: text },
-        voice: { 
-          languageCode: options.language, 
-          ssmlGender: options.gender 
-        },
-        audioConfig: { audioEncoding: 'MP3' },
-      };
+@cli.command()
+@click.argument('text')
+@click.option('--output', '-o', default='output.mp3', help='Output filename')
+@click.option('--language', '-l', default='en-US', help='Language code')
+@click.option('--gender', '-g', default='NEUTRAL', 
+              type=click.Choice(['MALE', 'FEMALE', 'NEUTRAL']), 
+              help='Voice gender')
+def speak(text, output, language, gender):
+    """Convert text to speech using Google Cloud TTS"""
+    try:
+        click.echo("Converting text to speech...")
+        tts_client.synthesize_speech(
+            text, 
+            output_file=output,
+            options={
+                'language_code': language,
+                'gender': gender
+            }
+        )
+        click.echo(f"Audio content written to: {output}")
+    except Exception as e:
+        click.echo(f"Error with text-to-speech: {str(e)}")
 
-      const [response] = await ttsClient.synthesizeSpeech(request);
-      const outputFile = options.output;
-      require('fs').writeFileSync(outputFile, response.audioContent, 'binary');
-      console.log(`Audio content written to: ${outputFile}`);
-    } catch (error) {
-      console.error('Error with text-to-speech:', error.message);
-    }
-  });
-
-program.parse();
+if __name__ == '__main__':
+    cli()
 ```
 
 </details>
@@ -371,10 +349,10 @@ This rule helps you implement the SQLite-based storage system for the Rin V0 pro
 # This rule helps with implementing the SQLite-based storage system
 
 # Define which files this rule applies to
-*.js
-src/storage.js
-src/db/*.js
-src/models/*.js
+*.py
+rin/storage.py
+rin/db/*.py
+rin/models/*.py
 
 # Include setup rule for context
 @file:.cursor/rules/Rin-v0-step1-setup.cursorignore
@@ -383,11 +361,11 @@ src/models/*.js
 When helping with the Rin V0 storage implementation:
 
 1. SQLite Setup:
-   - Use sqlite3 package for database operations
-   - Create a database in a user-specific location (~/.Rin/ folder)
-   - Initialize database and tables on startup
-   - Use proper serialization for operations
-   - Implement connection pooling or singleton pattern
+   - Use Python's built-in sqlite3 module for database operations
+   - Create a database in a user-specific location (~/.rin/ folder)
+   - Initialize database and tables in the class constructor
+   - Use connections and cursors properly
+   - Use context managers or proper cleanup for connections
 
 2. Database Schema:
    - Create an interactions table with:
@@ -397,37 +375,37 @@ When helping with the Rin V0 storage implementation:
      - timestamp: When the interaction occurred
    - Use appropriate data types for columns
    - Add indexes for frequently queried fields
-   - Use DATETIME DEFAULT CURRENT_TIMESTAMP for timestamps
+   - Use TEXT DEFAULT CURRENT_TIMESTAMP for timestamps in SQLite
 
 3. Storage API Design:
-   - Implement the following functions:
-     - init(): Initialize the database connection
-     - saveInteraction(query, response): Store a new interaction
-     - getInteractions(limit): Retrieve recent interactions
-   - Return Promises for async operations
+   - Implement a Storage class with the following methods:
+     - __init__(): Initialize the database connection
+     - init_db(): Create necessary tables and indexes
+     - save_interaction(query, response): Store a new interaction
+     - get_interactions(limit): Retrieve recent interactions
    - Use parameterized queries for security
-   - Implement proper error handling
+   - Implement proper error handling with exceptions
 
 4. Error Handling:
-   - Handle database connection errors
-   - Properly close connections when errors occur
-   - Add rollback logic for transactions
-   - Log detailed errors for debugging
-   - Provide user-friendly error messages
+   - Use try/except blocks for database operations
+   - Close connections properly in the __del__ method
+   - Add rollback for transactions
+   - Use specific exception types for different errors
+   - Provide helpful error messages
 
 5. Data Management:
    - Implement data cleanup for old records
-   - Use transaction for multi-statement operations
+   - Use transactions for multi-statement operations
    - Add proper validation before storing data
-   - Escape special characters in queries
+   - Return data as dictionaries for easier use
    - Consider data migration strategy for future schema changes
 
 6. Performance Considerations:
    - Use proper indexing for query performance
    - Keep connections open when appropriate
    - Close connections when done
-   - Use prepared statements for repeated queries
-   - Batch operations when possible
+   - Use executemany for batch operations
+   - Use connection pooling for concurrent access
 ```
 
 </details>
@@ -435,159 +413,129 @@ When helping with the Rin V0 storage implementation:
 ### Implementation Example
 
 <details>
-<summary>**Storage Module (src/storage.js)**</summary>
+<summary>**Storage Module (rin/storage.py)**</summary>
 
-```javascript
-// src/storage.js
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
+```python
+# rin/storage.py
+import sqlite3
+import os
+import json
+from pathlib import Path
+from datetime import datetime
 
-// Ensure data directory exists
-const dataDir = path.join(process.env.HOME || process.env.USERPROFILE, '.Rin');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir);
-}
-
-const dbPath = path.join(dataDir, 'Rin.db');
-let db;
-
-/**
- * Initialize the database connection and create tables if they don't exist
- */
-function init() {
-  return new Promise((resolve, reject) => {
-    try {
-      db = new sqlite3.Database(dbPath, (err) => {
-        if (err) {
-          console.error('Error connecting to database:', err.message);
-          return reject(err);
-        }
+class Storage:
+    def __init__(self):
+        # Create data directory in user's home if it doesn't exist
+        data_dir = Path.home() / ".rin"
+        data_dir.mkdir(exist_ok=True)
         
-        console.log(`Database connected at ${dbPath}`);
+        # Set up the database
+        self.db_path = data_dir / "rin.db"
+        self.conn = sqlite3.connect(str(self.db_path))
+        self.init_db()
         
-        // Create tables if they don't exist
-        db.serialize(() => {
-          db.run(`
+        print(f"Local memory initialized at {self.db_path}")
+    
+    def init_db(self):
+        """Initialize the database tables and indexes"""
+        cursor = self.conn.cursor()
+        
+        # Create interactions table if it doesn't exist
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS interactions (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              query TEXT NOT NULL,
-              response TEXT NOT NULL,
-              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                query TEXT NOT NULL,
+                response TEXT NOT NULL,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP
             )
-          `, (err) => {
-            if (err) {
-              console.error('Error creating interactions table:', err.message);
-              return reject(err);
-            }
+        ''')
+        
+        # Create index on timestamp for faster queries
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_interactions_timestamp 
+            ON interactions(timestamp DESC)
+        ''')
+        
+        self.conn.commit()
+    
+    def save_interaction(self, query, response):
+        """Store an interaction in the database
+        
+        Args:
+            query (str): The user's question
+            response (str): The assistant's response
             
-            // Create index on timestamp for faster queries
-            db.run(`
-              CREATE INDEX IF NOT EXISTS idx_interactions_timestamp 
-              ON interactions(timestamp DESC)
-            `, (err) => {
-              if (err) {
-                console.error('Error creating index:', err.message);
-                return reject(err);
-              }
-              
-              console.log('Database initialized successfully');
-              resolve();
-            });
-          });
-        });
-      });
-    } catch (error) {
-      console.error('Unexpected error during initialization:', error.message);
-      reject(error);
-    }
-  });
-}
-
-/**
- * Save a new interaction to the database
- * @param {string} query - The user's question
- * @param {string} response - The assistant's response
- * @returns {Promise<number>} - The ID of the saved interaction
- */
-function saveInteraction(query, response) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      return reject(new Error('Database not initialized. Call init() first.'));
-    }
+        Returns:
+            int: The ID of the inserted record
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "INSERT INTO interactions (query, response) VALUES (?, ?)",
+                (query, response)
+            )
+            self.conn.commit()
+            return cursor.lastrowid
+        except sqlite3.Error as e:
+            self.conn.rollback()
+            raise Exception(f"Database error: {str(e)}")
     
-    db.run(
-      'INSERT INTO interactions (query, response) VALUES (?, ?)',
-      [query, response],
-      function(err) {
-        if (err) {
-          console.error('Error saving interaction:', err.message);
-          return reject(err);
-        }
+    def get_interactions(self, limit=10):
+        """Retrieve recent interactions from the database
         
-        console.log(`Interaction saved with ID: ${this.lastID}`);
-        resolve(this.lastID);
-      }
-    );
-  });
-}
-
-/**
- * Get recent interactions from the database
- * @param {number} limit - Maximum number of interactions to retrieve
- * @returns {Promise<Array>} - Array of interaction objects
- */
-function getInteractions(limit = 10) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      return reject(new Error('Database not initialized. Call init() first.'));
-    }
+        Args:
+            limit (int): Maximum number of interactions to retrieve
+            
+        Returns:
+            list: List of interaction dictionaries
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "SELECT id, query, response, timestamp FROM interactions ORDER BY timestamp DESC LIMIT ?",
+                (limit,)
+            )
+            rows = cursor.fetchall()
+            
+            # Convert to list of dictionaries
+            interactions = []
+            for row in rows:
+                interactions.append({
+                    "id": row[0],
+                    "query": row[1],
+                    "response": row[2],
+                    "timestamp": row[3]
+                })
+            
+            return interactions
+        except sqlite3.Error as e:
+            raise Exception(f"Database error: {str(e)}")
     
-    db.all(
-      'SELECT * FROM interactions ORDER BY timestamp DESC LIMIT ?',
-      [limit],
-      (err, rows) => {
-        if (err) {
-          console.error('Error retrieving interactions:', err.message);
-          return reject(err);
-        }
+    def cleanup_old_interactions(self, days=30):
+        """Remove interactions older than specified days
         
-        console.log(`Retrieved ${rows.length} interactions`);
-        resolve(rows);
-      }
-    );
-  });
-}
-
-/**
- * Close the database connection
- * @returns {Promise<void>}
- */
-function close() {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      return resolve();
-    }
+        Args:
+            days (int): Number of days to keep
+            
+        Returns:
+            int: Number of records deleted
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "DELETE FROM interactions WHERE datetime(timestamp) < datetime('now', ?)",
+                (f'-{days} days',)
+            )
+            self.conn.commit()
+            return cursor.rowcount
+        except sqlite3.Error as e:
+            self.conn.rollback()
+            raise Exception(f"Database error: {str(e)}")
     
-    db.close((err) => {
-      if (err) {
-        console.error('Error closing database:', err.message);
-        return reject(err);
-      }
-      
-      console.log('Database connection closed');
-      db = null;
-      resolve();
-    });
-  });
-}
-
-module.exports = { 
-  init, 
-  saveInteraction, 
-  getInteractions,
-  close
-};
+    def __del__(self):
+        """Ensure database connection is closed when the object is destroyed"""
+        if hasattr(self, 'conn'):
+            self.conn.close()
 ```
 
 </details>
@@ -604,10 +552,10 @@ This rule helps you implement API integrations for the Rin V0 prototype, focusin
 # This rule helps with integrating external APIs
 
 # Define which files this rule applies to
-*.js
-src/*.js
-src/api/*.js
-src/services/*.js
+*.py
+rin/*.py
+rin/api/*.py
+rin/services/*.py
 
 # Include setup rule for context
 @file:.cursor/rules/Rin-v0-step1-setup.cursorignore
@@ -616,8 +564,8 @@ src/services/*.js
 When helping with the Rin V0 API integrations:
 
 1. OpenAI Integration:
-   - Use the official openai npm package
-   - Set up a proper Configuration with API key from environment variables
+   - Use the official openai Python package
+   - Set up the API key from environment variables
    - Use the ChatCompletion API for conversations
    - Set a reasonable model (gpt-4 or gpt-3.5-turbo)
    - Create a consistent system prompt for Rin
@@ -627,7 +575,7 @@ When helping with the Rin V0 API integrations:
    - Implement proper error handling for API limits
 
 2. Google Cloud TTS Integration:
-   - Use the @google-cloud/text-to-speech package
+   - Use the google-cloud-texttospeech package
    - Set up authentication using credentials file path
    - Choose appropriate voice settings
    - Support multiple languages
@@ -637,6 +585,7 @@ When helping with the Rin V0 API integrations:
    - Implement audio format options
 
 3. API Error Handling:
+   - Use try/except blocks for error handling
    - Handle network errors
    - Handle rate limiting errors
    - Implement exponential backoff for retries
@@ -655,7 +604,7 @@ When helping with the Rin V0 API integrations:
    - Follow principle of least privilege
 
 5. API Architecture:
-   - Create abstraction layers for APIs
+   - Create abstraction layers for APIs as Python classes
    - Implement service objects for API calls
    - Separate concerns between APIs and business logic
    - Make API services easily swappable
@@ -675,241 +624,269 @@ When helping with the Rin V0 API integrations:
 ### Implementation Example
 
 <details>
-<summary>**OpenAI Service (src/services/openai-service.js)**</summary>
+<summary>**OpenAI Service (rin/llm.py)**</summary>
 
-```javascript
-// src/services/openai-service.js
-const { Configuration, OpenAIApi } = require('openai');
+```python
+# rin/llm.py
+import os
+import time
+import openai
+from typing import Optional, Dict, Any, List
 
-// Default system prompt for Rin
-const DEFAULT_SYSTEM_PROMPT = 'You are Rin, a helpful personal assistant. Provide concise, accurate, and helpful responses.';
+# Default system prompt for Rin
+DEFAULT_SYSTEM_PROMPT = "You are Rin, a helpful personal assistant. Provide concise, accurate, and helpful responses."
 
-class OpenAIService {
-  constructor(apiKey, options = {}) {
-    if (!apiKey) {
-      throw new Error('OpenAI API key is required');
-    }
-    
-    this.configuration = new Configuration({
-      apiKey: apiKey,
-    });
-    
-    this.openai = new OpenAIApi(this.configuration);
-    
-    this.options = {
-      model: options.model || 'gpt-4',
-      temperature: options.temperature || 0.7,
-      maxTokens: options.maxTokens || 2048,
-      systemPrompt: options.systemPrompt || DEFAULT_SYSTEM_PROMPT,
-      timeoutMs: options.timeoutMs || 30000, // 30 seconds timeout
-      maxRetries: options.maxRetries || 3
-    };
-  }
-  
-  /**
-   * Ask a question to the AI assistant
-   * @param {string} query - The user's question
-   * @returns {Promise<string>} - The assistant's response
-   */
-  async ask(query) {
-    let retryCount = 0;
-    
-    while (retryCount <= this.options.maxRetries) {
-      try {
-        const response = await this.openai.createChatCompletion({
-          model: this.options.model,
-          messages: [
-            { role: 'system', content: this.options.systemPrompt },
-            { role: 'user', content: query }
-          ],
-          temperature: this.options.temperature,
-          max_tokens: this.options.maxTokens,
-          timeout: this.options.timeoutMs
-        });
+class OpenAIClient:
+    def __init__(self, api_key: Optional[str] = None, options: Optional[Dict[str, Any]] = None):
+        """Initialize the OpenAI client
         
-        if (response.data && 
-            response.data.choices && 
-            response.data.choices.length > 0 &&
-            response.data.choices[0].message) {
-          return response.data.choices[0].message.content.trim();
-        } else {
-          throw new Error('Unexpected response format from OpenAI API');
+        Args:
+            api_key: Optional API key (defaults to environment variable)
+            options: Configuration options
+        """
+        # Use provided API key or get from environment
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable.")
+        
+        # Set API key for OpenAI library
+        openai.api_key = self.api_key
+        
+        # Set default options
+        self.options = {
+            "model": "gpt-4",
+            "temperature": 0.7,
+            "max_tokens": 500,
+            "system_prompt": DEFAULT_SYSTEM_PROMPT,
+            "timeout": 30,  # 30 seconds timeout
+            "max_retries": 3
         }
-      } catch (error) {
-        // Check if we should retry
-        if (this.isRetryableError(error) && retryCount < this.options.maxRetries) {
-          retryCount++;
-          // Exponential backoff: 1s, 2s, 4s, etc.
-          const delay = Math.pow(2, retryCount) * 1000;
-          console.log(`Retrying OpenAI request after ${delay}ms (${retryCount}/${this.options.maxRetries})...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        } else {
-          // Either not retryable or we've exhausted retries
-          this.handleApiError(error);
-          throw error;
-        }
-      }
-    }
-  }
-  
-  /**
-   * Check if an error is retryable
-   * @param {Error} error - The error to check
-   * @returns {boolean} - Whether the error is retryable
-   */
-  isRetryableError(error) {
-    // Network errors
-    if (!error.response) return true;
+        
+        # Update with user options if provided
+        if options:
+            self.options.update(options)
     
-    // Rate limiting errors
-    if (error.response && (error.response.status === 429 || error.response.status === 503)) {
-      return true;
-    }
+    def generate_response(self, query: str) -> str:
+        """Generate a response from OpenAI models
+        
+        Args:
+            query: The user's question
+            
+        Returns:
+            The generated response text
+        """
+        retry_count = 0
+        backoff_time = 1  # Start with 1 second backoff
+        
+        while retry_count <= self.options["max_retries"]:
+            try:
+                # Create the chat completion
+                response = openai.ChatCompletion.create(
+                    model=self.options["model"],
+                    messages=[
+                        {"role": "system", "content": self.options["system_prompt"]},
+                        {"role": "user", "content": query}
+                    ],
+                    temperature=self.options["temperature"],
+                    max_tokens=self.options["max_tokens"],
+                    timeout=self.options["timeout"]
+                )
+                
+                # Extract and return the message content
+                if response.choices and len(response.choices) > 0:
+                    return response.choices[0].message.content.strip()
+                else:
+                    raise Exception("Unexpected empty response from OpenAI API")
+                    
+            except openai.error.RateLimitError:
+                # Handle rate limiting with exponential backoff
+                if retry_count < self.options["max_retries"]:
+                    print(f"Rate limit exceeded. Retrying in {backoff_time} seconds...")
+                    time.sleep(backoff_time)
+                    backoff_time *= 2  # Exponential backoff
+                    retry_count += 1
+                else:
+                    raise Exception("Rate limit exceeded. Maximum retries reached.")
+                    
+            except openai.error.APIError as e:
+                # Handle API errors
+                if self._is_retryable_error(e) and retry_count < self.options["max_retries"]:
+                    print(f"API error: {str(e)}. Retrying in {backoff_time} seconds...")
+                    time.sleep(backoff_time)
+                    backoff_time *= 2
+                    retry_count += 1
+                else:
+                    raise Exception(f"OpenAI API error: {str(e)}")
+                    
+            except openai.error.AuthenticationError:
+                # No retry for auth errors
+                raise Exception("Authentication error: Invalid OpenAI API key")
+                
+            except openai.error.Timeout:
+                # Handle timeout errors
+                if retry_count < self.options["max_retries"]:
+                    print(f"Request timed out. Retrying in {backoff_time} seconds...")
+                    time.sleep(backoff_time)
+                    backoff_time *= 2
+                    retry_count += 1
+                else:
+                    raise Exception("Request timed out. Maximum retries reached.")
+                    
+            except Exception as e:
+                # Handle unexpected errors
+                raise Exception(f"Error calling OpenAI API: {str(e)}")
     
-    return false;
-  }
-  
-  /**
-   * Handle API errors with appropriate messages
-   * @param {Error} error - The error to handle
-   */
-  handleApiError(error) {
-    if (error.response) {
-      // The request was made and the server responded with a non-2xx status
-      const status = error.response.status;
-      
-      if (status === 401) {
-        console.error('Authentication error: Invalid API key');
-      } else if (status === 429) {
-        console.error('Rate limit exceeded: Too many requests');
-      } else if (status === 400) {
-        console.error('Bad request: ', error.response.data);
-      } else if (status >= 500) {
-        console.error('OpenAI service error: Please try again later');
-      } else {
-        console.error(`OpenAI API error (${status}): ${JSON.stringify(error.response.data)}`);
-      }
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('Network error: No response received from OpenAI API');
-    } else {
-      // Something happened in setting up the request
-      console.error('Error creating request: ', error.message);
-    }
-  }
-}
-
-module.exports = OpenAIService;
+    def _is_retryable_error(self, error) -> bool:
+        """Determine if an error should trigger a retry
+        
+        Args:
+            error: The error to check
+            
+        Returns:
+            True if the error is retryable, False otherwise
+        """
+        # Server errors are retryable
+        if hasattr(error, 'http_status'):
+            return error.http_status >= 500
+            
+        # Network errors are retryable
+        if isinstance(error, (openai.error.APIConnectionError, openai.error.ServiceUnavailableError)):
+            return True
+            
+        return False
 ```
 
 </details>
 
 <details>
-<summary>**Text-to-Speech Service (src/services/tts-service.js)**</summary>
+<summary>**Text-to-Speech Service (rin/tts.py)**</summary>
 
-```javascript
-// src/services/tts-service.js
-const textToSpeech = require('@google-cloud/text-to-speech');
-const fs = require('fs');
-const util = require('util');
-const writeFile = util.promisify(fs.writeFile);
+```python
+# rin/tts.py
+import os
+from typing import Dict, Any, Optional
+from google.cloud import texttospeech
 
-class TTSService {
-  constructor(credentialsPath) {
-    if (!credentialsPath) {
-      throw new Error('Google Cloud credentials path is required');
-    }
+class TextToSpeech:
+    def __init__(self, credentials_path: Optional[str] = None):
+        """Initialize the Text-to-Speech client
+        
+        Args:
+            credentials_path: Optional path to credentials JSON file
+        """
+        # Set credentials path if provided
+        if credentials_path:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+            
+        # Check for credentials
+        if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+            raise ValueError("Google Cloud credentials not found. Set GOOGLE_APPLICATION_CREDENTIALS environment variable.")
+        
+        # Initialize the client
+        try:
+            self.client = texttospeech.TextToSpeechClient()
+        except Exception as e:
+            raise Exception(f"Failed to initialize Text-to-Speech client: {str(e)}")
     
-    // Set credentials path as an environment variable
-    process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
+    def synthesize_speech(self, text: str, output_file: str = "output.mp3", options: Optional[Dict[str, Any]] = None) -> str:
+        """Convert text to speech and save to a file
+        
+        Args:
+            text: The text to convert to speech
+            output_file: Path to save the audio file
+            options: Voice and audio options
+            
+        Returns:
+            The path to the output file
+        """
+        # Set default options
+        voice_options = {
+            "language_code": "en-US",
+            "gender": "NEUTRAL",
+            "voice_name": None
+        }
+        
+        audio_options = {
+            "audio_encoding": "MP3",
+            "pitch": 0,
+            "speaking_rate": 1.0
+        }
+        
+        # Update with user options if provided
+        if options:
+            if "language_code" in options:
+                voice_options["language_code"] = options["language_code"]
+            if "gender" in options:
+                voice_options["gender"] = options["gender"]
+            if "voice_name" in options:
+                voice_options["voice_name"] = options["voice_name"]
+            if "audio_encoding" in options:
+                audio_options["audio_encoding"] = options["audio_encoding"]
+            if "pitch" in options:
+                audio_options["pitch"] = options["pitch"]
+            if "speaking_rate" in options:
+                audio_options["speaking_rate"] = options["speaking_rate"]
+        
+        try:
+            # Set up the text input
+            synthesis_input = texttospeech.SynthesisInput(text=text)
+            
+            # Build the voice request
+            voice = texttospeech.VoiceSelectionParams(
+                language_code=voice_options["language_code"],
+                ssml_gender=getattr(texttospeech.SsmlVoiceGender, voice_options["gender"]),
+                name=voice_options["voice_name"]
+            )
+            
+            # Select the audio format
+            audio_config = texttospeech.AudioConfig(
+                audio_encoding=getattr(texttospeech.AudioEncoding, audio_options["audio_encoding"]),
+                pitch=audio_options["pitch"],
+                speaking_rate=audio_options["speaking_rate"]
+            )
+            
+            # Perform the synthesis
+            response = self.client.synthesize_speech(
+                input=synthesis_input,
+                voice=voice,
+                audio_config=audio_config
+            )
+            
+            # Write the audio content to file
+            with open(output_file, "wb") as out:
+                out.write(response.audio_content)
+                
+            return output_file
+            
+        except Exception as e:
+            raise Exception(f"Error synthesizing speech: {str(e)}")
     
-    // Initialize the client
-    this.client = new textToSpeech.TextToSpeechClient();
-  }
-  
-  /**
-   * Convert text to speech and save to a file
-   * @param {string} text - The text to convert
-   * @param {Object} options - Voice and audio options
-   * @param {string} outputFile - The file to save the audio to
-   * @returns {Promise<string>} - The path to the output file
-   */
-  async textToSpeech(text, options = {}, outputFile = 'output.mp3') {
-    try {
-      // Configure the request
-      const request = {
-        input: { text: text },
-        voice: {
-          languageCode: options.languageCode || 'en-US',
-          ssmlGender: options.gender || 'NEUTRAL',
-          name: options.voiceName
-        },
-        audioConfig: {
-          audioEncoding: options.audioEncoding || 'MP3',
-          pitch: options.pitch || 0,
-          speakingRate: options.speakingRate || 1.0
-        },
-      };
-      
-      // Make the API request
-      const [response] = await this.client.synthesizeSpeech(request);
-      
-      // Write the audio content to file
-      await writeFile(outputFile, response.audioContent, 'binary');
-      
-      console.log(`Audio content written to: ${outputFile}`);
-      return outputFile;
-    } catch (error) {
-      this.handleApiError(error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Handle API errors with appropriate messages
-   * @param {Error} error - The error to handle
-   */
-  handleApiError(error) {
-    if (error.code) {
-      // Google Cloud specific error codes
-      switch (error.code) {
-        case 7:  // PERMISSION_DENIED
-          console.error('Authentication error: Invalid or missing credentials');
-          break;
-        case 8:  // RESOURCE_EXHAUSTED
-          console.error('Quota exceeded or rate limit reached');
-          break;
-        case 3:  // INVALID_ARGUMENT
-          console.error('Invalid request: ', error.message);
-          break;
-        case 13: // INTERNAL
-          console.error('Google Cloud service error: Please try again later');
-          break;
-        default:
-          console.error(`Google Cloud API error (${error.code}): ${error.message}`);
-      }
-    } else {
-      console.error('Error with text-to-speech: ', error.message);
-    }
-  }
-  
-  /**
-   * Get available voices
-   * @param {string} languageCode - Optional language code filter
-   * @returns {Promise<Array>} - Array of available voices
-   */
-  async getVoices(languageCode) {
-    try {
-      const [result] = await this.client.listVoices({languageCode});
-      return result.voices;
-    } catch (error) {
-      this.handleApiError(error);
-      throw error;
-    }
-  }
-}
-
-module.exports = TTSService;
+    def list_voices(self, language_code: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get available voices
+        
+        Args:
+            language_code: Optional language code to filter voices
+            
+        Returns:
+            List of available voices
+        """
+        try:
+            request = texttospeech.ListVoicesRequest(language_code=language_code)
+            response = self.client.list_voices(request=request)
+            
+            voices = []
+            for voice in response.voices:
+                voices.append({
+                    "name": voice.name,
+                    "gender": texttospeech.SsmlVoiceGender(voice.ssml_gender).name,
+                    "language_codes": list(voice.language_codes),
+                    "natural_sample_rate_hertz": voice.natural_sample_rate_hertz
+                })
+                
+            return voices
+            
+        except Exception as e:
+            raise Exception(f"Error listing voices: {str(e)}")
 ```
 
 </details>
@@ -926,12 +903,10 @@ This rule helps you test and debug the Rin V0 prototype to ensure it works corre
 # This rule helps with testing and debugging the CLI application
 
 # Define which files this rule applies to
-*.js
-*.json
-*.env
-src/*.js
-test/*.js
-__tests__/*.js
+*.py
+tests/*.py
+test_*.py
+conftest.py
 
 # Include setup rule for context
 @file:.cursor/rules/Rin-v0-step1-setup.cursorignore
@@ -946,7 +921,7 @@ When helping with testing and debugging the Rin V0 CLI:
    - Test with different input types and edge cases
    - Verify database operations are working correctly
    - Test integration with external APIs
-   - Test CLI executable permissions
+   - Test CLI installation and execution
 
 2. Common Issues to Check:
    - Missing environment variables or configuration
@@ -956,30 +931,30 @@ When helping with testing and debugging the Rin V0 CLI:
    - Command syntax or usage problems
    - Error handling gaps
    - Dependency installation issues
-   - Version compatibility problems
+   - Virtual environment setup problems
 
 3. Debugging Techniques:
-   - Add strategic console.log statements
-   - Use proper error objects with stack traces
+   - Use print() statements for debugging
+   - Use Python's logging module for structured logging
+   - Set up Python debugger (pdb) for interactive debugging
    - Check for typos in variable names
    - Verify file paths are correct
-   - Use try/catch blocks to isolate issues
+   - Use try/except blocks to isolate issues
    - Test API calls in isolation
    - Check database connectivity and queries
-   - Verify npm dependencies are installed
 
 4. Environment Setup Validation:
-   - Confirm Node.js version is compatible
+   - Confirm Python version is compatible (3.9+)
    - Verify all dependencies are installed
+   - Check that virtual environment is activated
    - Check that API keys are valid and working
    - Confirm database path is writable
    - Verify file system permissions
    - Test network connectivity for API calls
-   - Check for conflicts with other global npm packages
 
 5. Test Scripts and Commands:
    - Create simple test scripts for common operations
-   - Use npm scripts for testing routines
+   - Use pytest for unit testing
    - Test the CLI in a clean environment
    - Document manual test procedures
    - Create test data for consistent testing
@@ -1000,85 +975,210 @@ When helping with testing and debugging the Rin V0 CLI:
 ### Implementation Example
 
 <details>
-<summary>**Testing Script (test/manual-test.js)**</summary>
+<summary>**Testing Script (tests/test_manual.py)**</summary>
 
-```javascript
-// test/manual-test.js
-require('dotenv').config();
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+```python
+#!/usr/bin/env python3
+# tests/test_manual.py
+import os
+import subprocess
+import sys
+from pathlib import Path
 
-// Define test cases
-const tests = [
-  {
-    name: 'Help command',
-    cmd: 'Rin --help',
-    expectedInOutput: 'Usage: Rin'
-  },
-  {
-    name: 'Ask command',
-    cmd: 'Rin ask "What is the capital of France?"',
-    expectedInOutput: 'Paris'
-  },
-  {
-    name: 'Remember command',
-    cmd: 'Rin remember',
-    expectedInOutput: 'Interaction'
-  },
-  {
-    name: 'Speak command',
-    cmd: 'Rin speak "Hello world" -o test-output.mp3',
-    expectedInOutput: 'Audio content written to',
-    cleanup: () => {
-      if (fs.existsSync('test-output.mp3')) {
-        fs.unlinkSync('test-output.mp3');
-        console.log('Cleaned up test audio file');
-      }
-    }
-  }
-];
+def run_command(cmd):
+    """Run a command and return the output"""
+    try:
+        result = subprocess.run(
+            cmd, 
+            shell=True, 
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed with exit code {e.returncode}")
+        print(f"Error output: {e.stderr}")
+        return None
 
-// Run tests
-console.log('Running Rin CLI tests...\n');
-
-let passed = 0;
-let failed = 0;
-
-for (const test of tests) {
-  try {
-    console.log(`Test: ${test.name}`);
+def main():
+    # Define test cases
+    tests = [
+        {
+            "name": "Help command",
+            "cmd": "rin --help",
+            "expected_in_output": "Usage:"
+        },
+        {
+            "name": "Ask command",
+            "cmd": "rin ask \"What is the capital of France?\"",
+            "expected_in_output": "Paris"
+        },
+        {
+            "name": "Remember command",
+            "cmd": "rin remember",
+            "expected_in_output": "Interaction"
+        },
+        {
+            "name": "Speak command",
+            "cmd": "rin speak \"Hello world\" -o test-output.mp3",
+            "expected_in_output": "Audio content written to",
+            "cleanup": lambda: Path("test-output.mp3").unlink(missing_ok=True)
+        }
+    ]
     
-    // Execute the command
-    const output = execSync(test.cmd).toString();
+    # Run tests
+    print("Running Rin CLI tests...\n")
     
-    // Check if expected text is in the output
-    if (output.includes(test.expectedInOutput)) {
-      console.log(`✅ PASSED: Output contains "${test.expectedInOutput}"`);
-      passed++;
-    } else {
-      console.log(`❌ FAILED: Output does not contain "${test.expectedInOutput}"`);
-      console.log(`Output: ${output.trim()}`);
-      failed++;
-    }
+    passed = 0
+    failed = 0
     
-    // Run cleanup function if provided
-    if (test.cleanup) {
-      test.cleanup();
-    }
+    for test in tests:
+        print(f"Test: {test['name']}")
+        
+        # Execute the command
+        output = run_command(test["cmd"])
+        
+        if output is None:
+            print(f"❌ FAILED: Command execution error")
+            failed += 1
+            continue
+        
+        # Check if expected text is in the output
+        if test["expected_in_output"] in output:
+            print(f"✅ PASSED: Output contains \"{test['expected_in_output']}\"")
+            passed += 1
+        else:
+            print(f"❌ FAILED: Output does not contain \"{test['expected_in_output']}\"")
+            print(f"Output: {output.strip()}")
+            failed += 1
+        
+        # Run cleanup function if provided
+        if "cleanup" in test:
+            test["cleanup"]()
+            print("Cleaned up test files")
+        
+        print()  # Add empty line between tests
     
-  } catch (error) {
-    console.log(`❌ FAILED: Command execution error`);
-    console.log(`Error: ${error.message}`);
-    failed++;
-  }
-  
-  console.log(''); // Add empty line between tests
-}
+    # Print summary
+    print(f"Test summary: {passed} passed, {failed} failed")
+    return 1 if failed > 0 else 0
 
-// Print summary
-console.log(`Test summary: ${passed} passed, ${failed} failed`);
-process.exit(failed > 0 ? 1 : 0);
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+</details>
+
+<details>
+<summary>**Unit Test Example (tests/test_storage.py)**</summary>
+
+```python
+# tests/test_storage.py
+import pytest
+import os
+import sqlite3
+from pathlib import Path
+import tempfile
+import shutil
+
+# Import the Storage class to test
+from rin.storage import Storage
+
+@pytest.fixture
+def temp_home_dir():
+    """Create a temporary home directory for testing"""
+    original_home = os.environ.get("HOME")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Set HOME to the temp directory
+        os.environ["HOME"] = temp_dir
+        yield temp_dir
+        # Restore original HOME
+        if original_home:
+            os.environ["HOME"] = original_home
+
+def test_storage_initialization(temp_home_dir):
+    """Test that the Storage class initializes correctly"""
+    storage = Storage()
+    
+    # Check that the database directory was created
+    db_dir = Path(temp_home_dir) / ".rin"
+    assert db_dir.exists()
+    assert db_dir.is_dir()
+    
+    # Check that the database file was created
+    db_path = db_dir / "rin.db"
+    assert db_path.exists()
+    assert db_path.is_file()
+    
+    # Check that we can connect to the database
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
+    
+    # Check that the interactions table exists
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='interactions'")
+    result = cursor.fetchone()
+    assert result is not None
+    assert result[0] == "interactions"
+    
+    # Clean up
+    conn.close()
+
+def test_save_and_retrieve_interaction(temp_home_dir):
+    """Test saving and retrieving interactions"""
+    storage = Storage()
+    
+    # Save a test interaction
+    test_query = "What is the meaning of life?"
+    test_response = "42"
+    row_id = storage.save_interaction(test_query, test_response)
+    
+    # Check that we got a valid row ID
+    assert row_id is not None
+    assert row_id > 0
+    
+    # Retrieve interactions
+    interactions = storage.get_interactions()
+    
+    # Check that we got our test interaction back
+    assert len(interactions) == 1
+    assert interactions[0]["query"] == test_query
+    assert interactions[0]["response"] == test_response
+    assert "timestamp" in interactions[0]
+
+def test_cleanup_old_interactions(temp_home_dir):
+    """Test cleaning up old interactions"""
+    storage = Storage()
+    
+    # Save some test interactions
+    storage.save_interaction("Test 1", "Response 1")
+    storage.save_interaction("Test 2", "Response 2")
+    storage.save_interaction("Test 3", "Response 3")
+    
+    # Check that we have 3 interactions
+    interactions = storage.get_interactions()
+    assert len(interactions) == 3
+    
+    # Manually adjust the timestamp of the first interaction to be older
+    db_path = Path(temp_home_dir) / ".rin" / "rin.db"
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE interactions SET timestamp = datetime('now', '-40 days') WHERE id = ?",
+        (interactions[0]["id"],)
+    )
+    conn.commit()
+    conn.close()
+    
+    # Clean up interactions older than 30 days
+    deleted_count = storage.cleanup_old_interactions(days=30)
+    
+    # Check that we deleted 1 interaction
+    assert deleted_count == 1
+    
+    # Check that we have 2 interactions left
+    interactions = storage.get_interactions()
+    assert len(interactions) == 2
 ```
 
 </details>
