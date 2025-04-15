@@ -13,6 +13,10 @@ export const v0Meta = {
     {
       title: "Step 1: Developer and Testing",
       path: "developer-and-testing"
+    },
+    {
+      title: "Step 2: Voice and Interaction",
+      path: "voice-and-interaction"
     }
   ]
 };

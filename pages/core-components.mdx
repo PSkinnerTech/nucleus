@@ -18,7 +18,7 @@ The brain of Rin, coordinating tasks, managing context, and driving personality.
 - Prompt Router + Task Dispatcher: Analyzes intent and routes the request to the right sub-agent or API
 - Personality Module: Adjusts tone, language, and behavior of responses based on user-defined settings (e.g., calm, funny, formal)
 - Agent Orchestrator:
-  - Runs background and concurrent agents
+  - Runs background tasks via Celery workers
   - Schedules agent chains for multi-step tasks
   - Shares memory and context between agents
 - RLHF Feedback Trainer: Learns from user feedback ("Yes, that's correct" / "That's wrong") to refine behavior over time
@@ -39,7 +39,7 @@ Maintains awareness and history across interactions and sessions.
 ### 🧠 LLM Access & Model Tools
 
 Interfaces with large language models and handles smart routing for inference tasks.
-- Hyperbolic: Primary gateway for smart model routing (short/long context, code vs. natural language)
+- LangChain/LiteLLM Router: Primary gateway for smart model routing (short/long context, code vs. natural language)
   - Fast queries → Claude, Sonar
   - Complex tasks → GPT-4, Claude 2.1, Haiku
   - Code generation → Claude 2.1, GPT-4
@@ -55,14 +55,14 @@ Provides connectivity to external services and platforms.
 - Messaging: Telegram, Discord, SMS (Twilio)
 - Social Media: X (Twitter), LinkedIn, Instagram (via official or third-party APIs)
 - Services & Errands: UberEats, Rappi, Amazon, flight/hotel APIs
-- Automation Bridges: IFTTT, Zapier, CLI scripting, Home Assistant
+- Automation Bridges: IFTTT, Zapier, Python scripting, Home Assistant
 
 ---
 
 ### 🔒 Security & Identity Layer
 
 Ensures privacy, secure access, and proper identity verification.
-- Token Vault: Secure storage of API credentials (e.g., HashiCorp Vault, Keyring)
+- Token Vault: Secure storage of API credentials (e.g., HashiCorp Vault, Python-keyring)
 - Auth Abstraction: OAuth2 for third-party logins, session handling
 - Fallback Authentication: Voiceprint ID or manual PIN/passphrase
 - Local Data Encryption: Protects session and memory data stored on-device
@@ -73,6 +73,6 @@ Ensures privacy, secure access, and proper identity verification.
 
 Defines where Rin lives and how you interact with it.
 - Hybrid Hosting Model: Self-hosted MCP/memory + optionally managed LLMs (or fully local/offline mode)
-- Frontend Interface (optional): Web dashboard (React + Tailwind) or desktop/native GUI via Tauri
+- Frontend Interface (optional): Web dashboard (React + Tailwind) or desktop/native GUI via PyQt/Tkinter
 
 --- 

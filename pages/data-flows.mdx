@@ -110,10 +110,10 @@ graph TD
 
 1. Voice → STT → routed through Prompt Router.
 2. Core AI invokes Research Agent Chain with:
-   - Web search agent (SerpAPI or Hyperbolic)
+   - Web search agent (SerpAPI or LangChain search tools)
    - Summarizer model (Claude or GPT-4)
    - Comparator agent (builds pros/cons list)
-3. Each agent runs in parallel using the orchestrator.
+3. Each agent runs in parallel using Celery tasks orchestration.
 4. Results synthesized into a simple summary:
    - "Here's the comparison in 3 key points…"
 5. Output returned via voice + optional text summary to your Telegram.
@@ -154,7 +154,7 @@ flowchart LR
     C --> D[Local LLM via Ollama]
     D --> E[Task Parser]
     E --> F[Local Memory DB]
-    F --> G[Timer System]
+    F --> G[Timer System via Python Schedule]
     G -->|At 5:00 PM| H[Reminder Trigger]
     H --> I[Local TTS Engine]
     I --> J[Voice Reminder]

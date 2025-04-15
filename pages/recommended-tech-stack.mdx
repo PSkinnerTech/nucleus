@@ -18,7 +18,7 @@
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
 | Model Routing & Override | Hyperbolic + manual override | Smart auto-routing with optional manual override per task |
-| Task Dispatcher | Custom queue logic or Temporal | Route requests to appropriate agents or APIs |
+| Task Dispatcher | Celery, RQ, or FastAPI background tasks | Route requests to appropriate agents or APIs |
 | RLHF Training | Manual feedback loop → vector db | Learn from user thumbs-up/down or voice correction |
 | Agent Permissions | Custom config per agent | Confirm before executing sensitive commands |
 
@@ -28,9 +28,9 @@
 
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
-| Session Memory Engine | Custom with Redis or in-memory store | Temporary conversational memory |
+| Session Memory Engine | Redis + Python client or in-memory store | Temporary conversational memory |
 | Long-Term Memory DB | Chroma, Weaviate, or Postgres + pgvector | Persistent semantic memory |
-| Model Context Protocol | Self-hosted MCP server | Thread-safe, multi-agent, multi-task context manager |
+| Model Context Protocol | Self-hosted MCP server (Python) | Thread-safe, multi-agent, multi-task context manager |
 
 ---
 
@@ -45,7 +45,7 @@
 | Social | X (Twitter) API, LinkedIn Graph, Threads API | Posting, DMs, scheduling |
 | Errands | UberEats, Amazon, Rappi, AfterShip | Ordering, deliveries, tracking |
 | Automation Tools | IFTTT, Zapier, Home Assistant | Smart home + automation tasks |
-| CLI/Local Scripting | Custom CLI wrapper or Node child_process | Power-user terminal control |
+| CLI/Local Scripting | Python subprocess module or asyncio | Power-user terminal control |
 
 ---
 
@@ -53,9 +53,9 @@
 
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
-| LLM Routing Layer | Hyperbolic | Switch between Claude, GPT-4, etc. based on task type |
+| LLM Routing Layer | LangChain, LiteLLM, or custom Python router | Switch between Claude, GPT-4, etc. based on task type |
 | Model Fallback (offline) | Ollama (for local model inference) | Use local LLMs (e.g., Mistral, LLaMA) when offline |
-| Model Interfaces | OpenAI, Anthropic, Claude, Gemini | General-purpose and specialized intelligence |
+| Model Interfaces | OpenAI Python SDK, Anthropic SDK, Google Gemini SDK | General-purpose and specialized intelligence |
 
 ---
 
@@ -63,10 +63,10 @@
 
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
-| API Server | FastAPI (Python) or Next.js (TS) | Serve agent endpoints, handle auth & routing |
-| Frontend GUI | React + Tailwind (web) or Tauri (native) | Optional user dashboard, mobile or desktop interface |
-| Auth Layer | NextAuth.js, Clerk.dev, or Supabase Auth | OAuth2 and user session management |
-| Queue & Scheduler | Celery (Python), Temporal (JS/Go) | Schedule jobs, manage agent chains |
+| API Server | FastAPI or Flask | Serve agent endpoints, handle auth & routing |
+| Frontend GUI | React + Tailwind (web) or PyQt/Tkinter for native UI | Optional user dashboard, mobile or desktop interface |
+| Auth Layer | FastAPI Auth, Pydantic, Python-jose | OAuth2 and user session management |
+| Queue & Scheduler | Celery or RQ with Redis backend | Schedule jobs, manage agent chains |
 | Containerization | Docker + Docker Compose | Encapsulate services and dependencies |
 | Self-Hosting | VPS (e.g., Hetzner, Fly.io) or local NUC | Host MCP, memory, agents for maximum control/privacy |
 
@@ -76,7 +76,7 @@
 
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
-| Curated Plugin Marketplace | Custom review/approval system | Allow third-party plugins with security and quality control |
+| Curated Plugin Marketplace | Python plugin system (similar to Spacy or FastAPI) | Allow third-party plugins with security and quality control |
 
 ---
 
@@ -84,7 +84,7 @@
 
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
-| Basic Analytics (opt-in) | Plausible, Umami, or custom analytics | Provide basic usage insights respecting user privacy |
+| Basic Analytics (opt-in) | Plausible, custom Python analytics, or Prometheus/Grafana | Provide basic usage insights respecting user privacy |
 
 ---
 
@@ -92,7 +92,7 @@
 
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
-| Automatic Encrypted Backups | Restic, BorgBackup, or custom scripts | Secure, automated backups and easy data portability |
+| Automatic Encrypted Backups | Restic, BorgBackup, or custom Python scripts | Secure, automated backups and easy data portability |
 
 ---
 
@@ -100,4 +100,4 @@
 
 | Component | Recommended Tools | Purpose |
 | --------- | ----------------- | ------- |
-| Hybrid Cross-platform Consistency | React Native, Electron, Tauri | Core consistency with platform-specific enhancements | 
+| Hybrid Cross-platform Consistency | React frontend + Python backend, or PyQt for desktop | Core consistency with platform-specific enhancements | 

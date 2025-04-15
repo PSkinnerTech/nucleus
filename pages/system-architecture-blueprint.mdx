@@ -11,7 +11,7 @@
           v                            v                                v
 +-------------------+       +---------------------+         +----------------------+
 |  STT / TTS Engine | <---> |  MCP Server + Memory| <-->     |  Multimodal Models  |
-|  (Omi, Whisper)   |       | (Session, Context)  |         | (Hyperbolic / LLMs)  |
+|  (Omi, Whisper)   |       | (Session, Context)  |         | (LangChain / LLMs)  |
 +-------------------+       +---------------------+         +----------------------+
 ```
 
@@ -31,7 +31,7 @@
 - Prompt Router + Task Dispatcher: Determines intent (e.g. "Schedule lunch", "Order pizza")
 - Personality Module: Prompt modifier + dynamic system messages
 - Agent Orchestrator:
-  - Background threads
+  - Background tasks via Celery
   - Scheduled agent chains
   - Parallel tasks with shared memory
 - RLHF Feedback Training Module: Captures user corrections to improve future interactions
@@ -46,7 +46,7 @@
 ---
 
 ### 🧠 LLM Access & Tools
-- Hyperbolic: Main access point for routing requests to optimal models
+- LangChain or LiteLLM: Main access point for routing requests to optimal models
   - Fast, short responses → Claude/Sonar
   - Long-context summaries → GPT-4/Haiku
   - Coding → Claude 2.1 or GPT-4
@@ -60,12 +60,12 @@
 - Social: X, LinkedIn (via Graph APIs or 3rd party)
 - Messaging: Telegram, Discord, SMS (Twilio)
 - Food/Services: UberEats, Rappi, Amazon
-- Custom: CLI commands, IFTTT, Zapier webhooks
+- Custom: Python scripts, IFTTT, Zapier webhooks
 
 ---
 
 ### 🔒 Security Layer
-- Encrypted token vault (e.g., HashiCorp Vault, Keyring, or local encrypted store)
+- Encrypted token vault (e.g., HashiCorp Vault, Python-keyring, or local encrypted store)
 - Auth abstraction for multiple providers (OAuth2, API key headers)
 - Optional MFA fallback, passcode gate, or voiceprint verification
 
@@ -91,13 +91,13 @@ Use Case: "Rin, schedule lunch with Nani at 1pm tomorrow."
 | Component | Recommended Tools |
 | --------- | ----------------- |
 | Voice SDK | Omi SDK, Whisper (STT), ElevenLabs (TTS) |
-| LLMs (API) | Hyperbolic (multi-model), OpenAI, Claude, Ollama (offline fallback) |
-| MCP Server | Self-hosted, deployable with Docker |
+| LLMs (API) | LangChain/LiteLLM, OpenAI Python SDK, Anthropic SDK, Ollama (offline fallback) |
+| MCP Server | Self-hosted Python server, deployable with Docker |
 | Memory DB | Chroma, Weaviate, or PostgreSQL Hybrid |
-| Backend API | Node.js, FastAPI, or Next.js API routes |
-| Frontend (Optional) | React + Tailwind or Tauri for local GUI with optional web dashboard |
+| Backend API | FastAPI or Flask |
+| Frontend (Optional) | React + Tailwind (web) or PyQt/Tkinter for local GUI |
 | Hosting Model | Hybrid (Self-hosted MCP + memory, managed LLMs) or fully local for high privacy |
-| Auth Layer | OAuth2 (NextAuth / Clerk), Vault |
-| Agent Runtime | LangChain, AutoGen, or custom orchestration |
-| Scheduler / Queue | Celery (Python) or Temporal (JS/Go) |
+| Auth Layer | FastAPI Auth, Python-jose, Vault |
+| Agent Runtime | LangChain, LlamaIndex, or custom Python orchestration |
+| Scheduler / Queue | Celery or RQ with Redis backend |
 | Agent Permissions | Configurable per task — open-ended agents may ask for permission optionally |

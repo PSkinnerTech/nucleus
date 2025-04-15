@@ -1,0 +1,882 @@
+---
+title: "Step 2: Voice and Interaction"
+navOrder: 3
+---
+# Step 2: Voice & Interaction Setup
+
+This guide builds upon the CLI foundation established in Step 1 by implementing the remaining core features for Rin V0.
+
+## Prerequisites
+
+Ensure you have completed [Step 1: Developer & Testing Tools Setup](/v0/developer-and-testing) before proceeding.
+
+## STT (Speech-to-Text) Implementation
+
+### 1. Install Dependencies
+```bash
+cd rin-cli
+npm install node-record-lpcm16 @google-cloud/speech
+```
+
+### 2. Create Basic Speech Recognition
+```javascript
+// src/speech.js
+const record = require('node-record-lpcm16');
+const speech = require('@google-cloud/speech');
+
+// Initialize speech client
+const speechClient = new speech.SpeechClient({
+  keyFilename: process.env.GOOGLE_CLOUD_CREDENTIALS
+});
+
+function startListening(callback) {
+  const encoding = 'LINEAR16';
+  const sampleRateHertz = 16000;
+  const languageCode = 'en-US';
+
+  const request = {
+    config: {
+      encoding: encoding,
+      sampleRateHertz: sampleRateHertz,
+      languageCode: languageCode,
+    },
+    interimResults: false,
+  };
+
+  // Create a recognize stream
+  const recognizeStream = speechClient
+    .streamingRecognize(request)
+    .on('error', console.error)
+    .on('data', data => {
+      if (data.results[0] && data.results[0].alternatives[0]) {
+        const transcription = data.results[0].alternatives[0].transcript;
+        callback(transcription);
+      }
+    });
+
+  // Start recording and send the microphone input to the Speech API
+  console.log('Listening, press Ctrl+C to stop.');
+  record
+    .start({
+      sampleRateHertz: sampleRateHertz,
+      threshold: 0,
+    })
+    .on('error', console.error)
+    .pipe(recognizeStream);
+}
+
+module.exports = { startListening };
+```
+
+## Push-to-Talk Implementation
+
+### 1. Create Wake Word Detection
+```javascript
+// src/wake-word.js
+const record = require('node-record-lpcm16');
+const { Detector } = require('snowboy');
+const path = require('path');
+const fs = require('fs');
+
+// Ensure models directory exists
+const modelsDir = path.join(__dirname, '../models');
+if (!fs.existsSync(modelsDir)) {
+  fs.mkdirSync(modelsDir);
+}
+
+// Download a basic wake word model - in production you'd customize this
+const wakeWordModel = path.join(modelsDir, 'rin.pmdl');
+// For this prototype, we'll use a placeholder model
+// You would need to train a custom model for production
+
+function initWakeWordDetection(callback) {
+  const models = {
+    file: wakeWordModel,
+    sensitivity: '0.5',
+    hotwords: 'rin'
+  };
+
+  const detector = new Detector({
+    resource: path.join(__dirname, '../node_modules/snowboy/resources/common.res'),
+    models: [models],
+    audioGain: 2.0,
+  });
+
+  detector.on('hotword', (index, hotword) => {
+    console.log('Wake word detected!');
+    callback();
+  });
+
+  record
+    .start({
+      threshold: 0,
+      sampleRate: 16000,
+    })
+    .pipe(detector);
+}
+
+module.exports = { initWakeWordDetection };
+```
+
+## Web Search Integration
+
+### 1. Install Dependencies
+```bash
+npm install serpapi
+```
+
+### 2. Create Web Search Module
+```javascript
+// src/search.js
+const { getJson } = require('serpapi');
+
+async function webSearch(query) {
+  try {
+    const response = await getJson({
+      q: query,
+      api_key: process.env.SERPAPI_API_KEY,
+      engine: "google",
+    });
+    
+    // Extract organic results
+    const results = response.organic_results.slice(0, 3).map(result => ({
+      title: result.title,
+      link: result.link,
+      snippet: result.snippet
+    }));
+    
+    return results;
+  } catch (error) {
+    console.error('Error during web search:', error.message);
+    return [];
+  }
+}
+
+async function searchAndSummarize(query) {
+  const searchResults = await webSearch(query);
+  
+  if (searchResults.length === 0) {
+    return "I couldn't find any relevant information.";
+  }
+  
+  // Format search results for the LLM
+  const resultsText = searchResults.map((result, i) => 
+    `[${i+1}] ${result.title}\n${result.snippet}\nURL: ${result.link}`
+  ).join('\n\n');
+  
+  // Use OpenAI to summarize
+  const OpenAI = require('openai');
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+  
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      { 
+        role: 'system', 
+        content: 'You are a helpful assistant that summarizes web search results concisely.' 
+      },
+      { 
+        role: 'user', 
+        content: `Please summarize these search results for "${query}":\n\n${resultsText}` 
+      }
+    ],
+    temperature: 0.5,
+    max_tokens: 300
+  });
+  
+  return response.choices[0].message.content;
+}
+
+module.exports = { webSearch, searchAndSummarize };
+```
+
+## Telegram Bot Integration
+
+### 1. Install Dependencies
+```bash
+npm install node-telegram-bot-api
+```
+
+### 2. Create Telegram Bot Module
+```javascript
+// src/telegram.js
+const TelegramBot = require('node-telegram-bot-api');
+const storage = require('./storage');
+const OpenAI = require('openai');
+
+// Initialize OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+let bot;
+
+function initBot() {
+  // Replace with your bot token
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  bot = new TelegramBot(token, { polling: true });
+  
+  bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userMessage = msg.text;
+    
+    // Process user message with Rin logic
+    try {
+      // Show typing indicator
+      bot.sendChatAction(chatId, 'typing');
+      
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'You are Rin, a helpful personal assistant.' },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      });
+      
+      const answer = response.choices[0].message.content;
+      
+      // Store interaction
+      await storage.saveInteraction(userMessage, answer);
+      
+      // Send response
+      bot.sendMessage(chatId, answer);
+    } catch (error) {
+      console.error('Error processing message:', error);
+      bot.sendMessage(chatId, 'Sorry, I encountered an error processing your request.');
+    }
+  });
+  
+  console.log('Telegram bot initialized');
+}
+
+module.exports = { initBot };
+```
+
+## Simple List Storage & Reminder System
+
+### 1. Update Storage Module
+```javascript
+// src/storage.js (additional functions)
+
+// Add to existing storage.js file
+function saveList(listName, items) {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      // Create lists table if it doesn't exist
+      db.run(`
+        CREATE TABLE IF NOT EXISTS lists (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT UNIQUE,
+          items TEXT,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Upsert list (insert or replace)
+      db.run(
+        'INSERT OR REPLACE INTO lists (name, items) VALUES (?, ?)',
+        [listName, JSON.stringify(items)],
+        function(err) {
+          if (err) return reject(err);
+          resolve(this.lastID);
+        }
+      );
+    });
+  });
+}
+
+function getList(listName) {
+  return new Promise((resolve, reject) => {
+    db.get(
+      'SELECT * FROM lists WHERE name = ?',
+      [listName],
+      (err, row) => {
+        if (err) return reject(err);
+        if (!row) return resolve(null);
+        
+        try {
+          const items = JSON.parse(row.items);
+          resolve(items);
+        } catch (e) {
+          reject(new Error('Error parsing list data'));
+        }
+      }
+    );
+  });
+}
+
+function createReminder(text, timestamp) {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      // Create reminders table if it doesn't exist
+      db.run(`
+        CREATE TABLE IF NOT EXISTS reminders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          text TEXT,
+          remind_at DATETIME,
+          completed INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      db.run(
+        'INSERT INTO reminders (text, remind_at) VALUES (?, ?)',
+        [text, timestamp],
+        function(err) {
+          if (err) return reject(err);
+          resolve(this.lastID);
+        }
+      );
+    });
+  });
+}
+
+function getPendingReminders() {
+  const now = new Date().toISOString();
+  return new Promise((resolve, reject) => {
+    db.all(
+      'SELECT * FROM reminders WHERE remind_at <= ? AND completed = 0',
+      [now],
+      (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      }
+    );
+  });
+}
+
+function markReminderCompleted(id) {
+  return new Promise((resolve, reject) => {
+    db.run(
+      'UPDATE reminders SET completed = 1 WHERE id = ?',
+      [id],
+      function(err) {
+        if (err) return reject(err);
+        resolve(this.changes > 0);
+      }
+    );
+  });
+}
+
+// Add these functions to the module exports
+module.exports = { 
+  init, 
+  saveInteraction, 
+  getInteractions,
+  saveList,
+  getList,
+  createReminder,
+  getPendingReminders,
+  markReminderCompleted
+};
+```
+
+### 2. Create Reminder Service
+```javascript
+// src/reminders.js
+const storage = require('./storage');
+
+let reminderInterval;
+
+function startReminderService() {
+  // Check for reminders every minute
+  reminderInterval = setInterval(async () => {
+    try {
+      const pendingReminders = await storage.getPendingReminders();
+      
+      for (const reminder of pendingReminders) {
+        console.log(`REMINDER: ${reminder.text}`);
+        
+        // In a real application, you would also want to:
+        // 1. Push notifications
+        // 2. Send to Telegram if configured
+        // 3. Play audio if applicable
+        
+        // Mark as completed
+        await storage.markReminderCompleted(reminder.id);
+      }
+    } catch (error) {
+      console.error('Error processing reminders:', error);
+    }
+  }, 60000); // Check every minute
+  
+  console.log('Reminder service started');
+}
+
+function stopReminderService() {
+  if (reminderInterval) {
+    clearInterval(reminderInterval);
+    console.log('Reminder service stopped');
+  }
+}
+
+module.exports = { startReminderService, stopReminderService };
+```
+
+## Email Draft Functionality
+
+### 1. Create Email Module
+```javascript
+// src/email.js
+const fs = require('fs');
+const path = require('path');
+const OpenAI = require('openai');
+
+// Initialize OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Ensure drafts directory exists
+const draftsDir = path.join(process.env.HOME || process.env.USERPROFILE, '.rin/drafts');
+if (!fs.existsSync(draftsDir)) {
+  fs.mkdirSync(draftsDir, { recursive: true });
+}
+
+async function createEmailDraft(to, subject, contentPrompt) {
+  try {
+    // Generate email content using OpenAI
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a helpful assistant that drafts professional emails.' 
+        },
+        { 
+          role: 'user', 
+          content: `Draft an email with the following details:
+          To: ${to}
+          Subject: ${subject}
+          Content: ${contentPrompt}
+          
+          Make it professional and concise.` 
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    });
+    
+    const emailContent = response.choices[0].message.content;
+    
+    // Save draft to file
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `email_draft_${timestamp}.txt`;
+    const filePath = path.join(draftsDir, filename);
+    
+    const emailData = `To: ${to}
+Subject: ${subject}
+
+${emailContent}`;
+    
+    fs.writeFileSync(filePath, emailData);
+    
+    return {
+      success: true,
+      path: filePath,
+      content: emailData
+    };
+  } catch (error) {
+    console.error('Error creating email draft:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+module.exports = { createEmailDraft };
+```
+
+## Update Main CLI Interface
+
+### 1. Update Environment Configuration
+```env
+# Add to .env
+GOOGLE_CLOUD_CREDENTIALS=/path/to/your/google-credentials.json
+SERPAPI_API_KEY=your_serpapi_key
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+```
+
+### 2. Update CLI Entry Point
+```javascript
+// src/index.js (update to include new features)
+#!/usr/bin/env node
+
+// src/index.js
+require('dotenv').config();
+const { program } = require('commander');
+const storage = require('./storage');
+const speech = require('./speech');
+const wakeWord = require('./wake-word');
+const search = require('./search');
+const telegram = require('./telegram');
+const reminders = require('./reminders');
+const email = require('./email');
+const OpenAI = require('openai');
+const textToSpeech = require('@google-cloud/text-to-speech');
+const fs = require('fs');
+const path = require('path');
+ 
+// Initialize OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+ 
+// Initialize Google Cloud TTS
+const ttsClient = new textToSpeech.TextToSpeechClient({
+  keyFilename: process.env.GOOGLE_CLOUD_CREDENTIALS
+});
+ 
+// Initialize storage
+storage.init();
+
+// Start reminder service
+reminders.startReminderService();
+ 
+program
+  .name('rin')
+  .description('Rin CLI - Personal Assistant Prototype')
+  .version('0.1.0');
+ 
+program
+  .command('ask <query>')
+  .description('Ask Rin a question')
+  .action(async (query) => {
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'You are Rin, a helpful personal assistant.' },
+          { role: 'user', content: query }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      });
+      
+      const answer = response.choices[0].message.content;
+      console.log(`Rin: ${answer}`);
+      
+      // Store interaction in memory
+      await storage.saveInteraction(query, answer);
+    } catch (error) {
+      console.error('Error:', error.message);
+    }
+  });
+ 
+program
+  .command('remember')
+  .description('Show past interactions')
+  .action(async () => {
+    try {
+      const interactions = await storage.getInteractions();
+      if (interactions.length === 0) {
+        console.log('No past interactions found.');
+        return;
+      }
+      
+      console.log('Past interactions:');
+      interactions.forEach((item, i) => {
+        console.log(`\n--- Interaction ${i+1} ---`);
+        console.log(`You: ${item.query}`);
+        console.log(`Rin: ${item.response}`);
+      });
+    } catch (error) {
+      console.error('Error retrieving interactions:', error.message);
+    }
+  });
+ 
+program
+  .command('speak <text>')
+  .description('Convert text to speech using Google Cloud TTS')
+  .action(async (text) => {
+    try {
+      const request = {
+        input: { text: text },
+        voice: { languageCode: 'en-US', ssmlGender: 'NEUTRAL' },
+        audioConfig: { audioEncoding: 'MP3' },
+      };
+ 
+      const [response] = await ttsClient.synthesizeSpeech(request);
+      const outputFile = 'output.mp3';
+      fs.writeFileSync(outputFile, response.audioContent, 'binary');
+      console.log(`Audio content written to: ${outputFile}`);
+    } catch (error) {
+      console.error('Error:', error.message);
+    }
+  });
+
+program
+  .command('listen')
+  .description('Listen for voice input')
+  .action(() => {
+    speech.startListening(async (transcription) => {
+      console.log(`You said: ${transcription}`);
+      
+      // Process the transcription like a regular query
+      try {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [
+            { role: 'system', content: 'You are Rin, a helpful personal assistant.' },
+            { role: 'user', content: transcription }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        });
+        
+        const answer = response.choices[0].message.content;
+        console.log(`Rin: ${answer}`);
+        
+        // Store interaction
+        await storage.saveInteraction(transcription, answer);
+        
+        // Convert to speech
+        const request = {
+          input: { text: answer },
+          voice: { languageCode: 'en-US', ssmlGender: 'NEUTRAL' },
+          audioConfig: { audioEncoding: 'MP3' },
+        };
+ 
+        const [ttsResponse] = await ttsClient.synthesizeSpeech(request);
+        const outputFile = 'response.mp3';
+        fs.writeFileSync(outputFile, ttsResponse.audioContent, 'binary');
+        
+        // In a real application, you would play this audio
+        console.log(`Response audio saved to: ${outputFile}`);
+      } catch (error) {
+        console.error('Error processing voice command:', error.message);
+      }
+    });
+  });
+
+program
+  .command('wake')
+  .description('Start wake word detection')
+  .action(() => {
+    console.log('Listening for wake word "Rin"... Press Ctrl+C to exit.');
+    wakeWord.initWakeWordDetection(() => {
+      console.log('Wake word detected! Now listening for command...');
+      speech.startListening(async (transcription) => {
+        console.log(`You said: ${transcription}`);
+        
+        // Process command as above
+        // (Similar code to listen command)
+      });
+    });
+  });
+
+program
+  .command('search <query>')
+  .description('Search the web and summarize results')
+  .action(async (query) => {
+    try {
+      console.log(`Searching for: ${query}`);
+      const summary = await search.searchAndSummarize(query);
+      console.log('\nSummary:');
+      console.log(summary);
+      
+      // Store as an interaction
+      await storage.saveInteraction(`web search: ${query}`, summary);
+    } catch (error) {
+      console.error('Error during search:', error.message);
+    }
+  });
+
+program
+  .command('telegram')
+  .description('Start Telegram bot')
+  .action(() => {
+    if (!process.env.TELEGRAM_BOT_TOKEN) {
+      console.error('Error: TELEGRAM_BOT_TOKEN not set in environment');
+      return;
+    }
+    
+    telegram.initBot();
+    console.log('Telegram bot started. Press Ctrl+C to stop.');
+  });
+
+program
+  .command('list <action> <name> [items...]')
+  .description('Manage lists (create, update, view)')
+  .action(async (action, name, items) => {
+    try {
+      switch (action.toLowerCase()) {
+        case 'create':
+        case 'update':
+          if (!items || items.length === 0) {
+            console.error('Error: No items provided');
+            return;
+          }
+          await storage.saveList(name, items);
+          console.log(`List "${name}" saved with ${items.length} items`);
+          break;
+        
+        case 'view':
+          const list = await storage.getList(name);
+          if (!list) {
+            console.log(`List "${name}" not found`);
+            return;
+          }
+          console.log(`\nList: ${name}`);
+          list.forEach((item, i) => {
+            console.log(`${i+1}. ${item}`);
+          });
+          break;
+          
+        default:
+          console.error('Unknown action. Use create, update, or view');
+      }
+    } catch (error) {
+      console.error('Error managing list:', error.message);
+    }
+  });
+
+program
+  .command('remind <time> <text>')
+  .description('Set a reminder (time format: YYYY-MM-DD HH:MM or relative like "5m", "1h")')
+  .action(async (timeStr, text) => {
+    try {
+      let reminderTime;
+      
+      if (timeStr.match(/^\d+[mhdw]$/)) {
+        // Parse relative time (e.g., 5m, 1h, 2d, 1w)
+        const value = parseInt(timeStr);
+        const unit = timeStr.slice(-1);
+        
+        reminderTime = new Date();
+        switch (unit) {
+          case 'm': reminderTime.setMinutes(reminderTime.getMinutes() + value); break;
+          case 'h': reminderTime.setHours(reminderTime.getHours() + value); break;
+          case 'd': reminderTime.setDate(reminderTime.getDate() + value); break;
+          case 'w': reminderTime.setDate(reminderTime.getDate() + (value * 7)); break;
+        }
+      } else {
+        // Parse absolute time
+        reminderTime = new Date(timeStr);
+      }
+      
+      if (isNaN(reminderTime.getTime())) {
+        console.error('Error: Invalid time format');
+        return;
+      }
+      
+      await storage.createReminder(text, reminderTime.toISOString());
+      console.log(`Reminder set for ${reminderTime.toLocaleString()}: ${text}`);
+    } catch (error) {
+      console.error('Error setting reminder:', error.message);
+    }
+  });
+
+program
+  .command('email <to> <subject> <content>')
+  .description('Create an email draft')
+  .action(async (to, subject, content) => {
+    try {
+      console.log('Creating email draft...');
+      const result = await email.createEmailDraft(to, subject, content);
+      
+      if (result.success) {
+        console.log(`Email draft created and saved to: ${result.path}`);
+        console.log('\nDraft content:');
+        console.log(result.content);
+      } else {
+        console.error(`Error creating email draft: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error with email draft:', error.message);
+    }
+  });
+
+program.parse();
+
+// Cleanup on exit
+process.on('SIGINT', () => {
+  console.log('\nStopping Rin services...');
+  reminders.stopReminderService();
+  process.exit(0);
+});
+```
+
+## Installation and Usage
+
+### 1. Update Package Script Setup
+```json
+// package.json
+{
+  "name": "rin-cli",
+  "version": "0.1.0",
+  "description": "Rin Personal Assistant CLI",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "bin": {
+    "rin": "./src/index.js"
+  },
+  "dependencies": {
+    "@google-cloud/speech": "^5.1.0",
+    "@google-cloud/text-to-speech": "^4.2.2",
+    "axios": "^1.4.0",
+    "commander": "^10.0.1",
+    "dotenv": "^16.0.3",
+    "node-record-lpcm16": "^1.0.1",
+    "node-telegram-bot-api": "^0.61.0",
+    "openai": "^4.2.0",
+    "serpapi": "^1.1.1",
+    "snowboy": "^1.3.1",
+    "sqlite3": "^5.1.6"
+  }
+}
+```
+
+### 2. Make CLI Executable
+```bash
+chmod +x src/index.js
+npm link
+```
+
+## Usage Examples
+
+```bash
+# Ask Rin a question
+rin ask "What's the weather today?"
+
+# Listen for voice input
+rin listen
+
+# Search the web for information
+rin search "latest AI developments"
+
+# Start wake word detection
+rin wake
+
+# Create and view lists
+rin list create shopping milk eggs bread
+rin list view shopping
+
+# Set reminders
+rin remind 15m "Take a break"
+rin remind "2023-08-15 14:30" "Doctor appointment"
+
+# Create email drafts
+rin email "john@example.com" "Meeting tomorrow" "Let's discuss the project status"
+
+# Start Telegram bot
+rin telegram
+```
+
+## Next Steps
+
+With these implementations, Rin V0 now includes all the core prototype features specified in the feature prioritization matrix. The next stage would be to refine the integrations, improve the user experience, and prepare to implement the V1 features outlined in the project roadmap.
+
+Key areas to focus on next include:
+1. Improving context awareness between different commands
+2. Enhancing the voice interaction experience
+3. Implementing multi-step command sequences
+4. Adding more personality elements to responses
+
+The foundation you've built with this V0 prototype demonstrates the core capabilities and sets the stage for more advanced features in future versions. 
